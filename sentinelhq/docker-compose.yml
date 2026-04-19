@@ -1,0 +1,278 @@
+version: "3.9"
+
+services:
+
+  # ── Database ────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: shq-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-sentinelhq}
+      POSTGRES_USER:     ${DB_USER:-shq}
+      POSTGRES_PASSWORD: ${DB_PASS:-changeme}
+    volumes:
+      - shq-postgres:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - shq-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-shq} -d ${DB_NAME:-sentinelhq}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Collector ───────────────────────────────────────────────────────────────
+  collector:
+    build:
+      context: ./collector
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-collector
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - OPENSEARCH_URL=${OPENSEARCH_URL:-https://wazuh.indexer:9200}
+      - OPENSEARCH_USER=${OPENSEARCH_USER:-admin}
+      - OPENSEARCH_PASS=${OPENSEARCH_PASS:-SecretPassword}
+      - OPENSEARCH_INDEX=${OPENSEARCH_INDEX:-wazuh-alerts-*}
+      - WAZUH_VERIFY_SSL=${WAZUH_VERIFY_SSL:-false}
+      - WAZUH_API_URL=${WAZUH_API_URL:-https://wazuh.manager:55000}
+      - WAZUH_API_USER=${WAZUH_API_USER:-wazuh-wui}
+      - WAZUH_API_PASS=${WAZUH_API_PASS}
+      - COLLECT_INTERVAL_SECONDS=${COLLECT_INTERVAL_SECONDS:-30}
+    volumes:
+      - ./license.key:/app/license.key:ro
+    networks:
+      - shq-net
+      - wazuh-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Analyzer ────────────────────────────────────────────────────────────────
+  analyzer:
+    build:
+      context: ./analyzer
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-analyzer
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - ANALYZE_INTERVAL_SECONDS=${ANALYZE_INTERVAL_SECONDS:-600}
+      - NOISE_THRESHOLD_HOURLY=${NOISE_THRESHOLD_HOURLY:-20}
+      - NOISE_WINDOW_HOURS=${NOISE_WINDOW_HOURS:-72}
+      - MIN_OCCURRENCES=${MIN_OCCURRENCES:-10}
+      - RULE_ID_START=${RULE_ID_START:-122000}
+      - RULE_ID_MAX=${RULE_ID_MAX:-122999}
+      - WAZUH_API_URL=${WAZUH_API_URL:-https://wazuh.manager:55000}
+      - WAZUH_API_USER=${WAZUH_API_USER:-wazuh-wui}
+      - WAZUH_API_PASS=${WAZUH_API_PASS}
+      - WAZUH_VERIFY_SSL=${WAZUH_VERIFY_SSL:-false}
+    networks:
+      - shq-net
+      - wazuh-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── LLM Agent ───────────────────────────────────────────────────────────────
+  llm-agent:
+    build:
+      context: ./llm-agent
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-llm
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - LLM_API_URL=${LLM_API_URL:-https://openrouter.ai/api/v1}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-google/gemini-2.5-flash}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - WAZUH_API_URL=${WAZUH_API_URL:-https://wazuh.manager:55000}
+      - WAZUH_API_USER=${WAZUH_API_USER:-wazuh-wui}
+      - WAZUH_API_PASS=${WAZUH_API_PASS}
+      - WAZUH_VERIFY_SSL=${WAZUH_VERIFY_SSL:-false}
+      - POLL_INTERVAL_SECONDS=${LLM_POLL_INTERVAL:-30}
+      - CORRELATE_INTERVAL_SECONDS=${CORRELATE_INTERVAL:-30}
+      - CORRELATE_WINDOW_MINUTES=${CORRELATE_WINDOW:-10}
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-sentinelhq-internal-secret}
+      - DASHBOARD_INTERNAL_URL=http://shq-dashboard:8080
+    networks:
+      - shq-net
+      - wazuh-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Telegram Bot ─────────────────────────────────────────────────────────────
+  telegram-bot:
+    build:
+      context: ./telegram-bot
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-telegram
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LLM_API_URL=${LLM_API_URL:-https://openrouter.ai/api/v1}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-google/gemini-2.5-flash}
+      - VELOCIRAPTOR_API_CONFIG=/app/sentinelhq_api.yaml
+      - VELOCIRAPTOR_URL=${VELOCIRAPTOR_URL:-192.168.1.177:8001}
+      - VELOCIRAPTOR_WAZUH_IPS=${MANAGER_PUBLIC_IP:-192.168.1.177}
+      - VELOCIRAPTOR_SERVER_IP=${MANAGER_PUBLIC_IP:-192.168.1.177}
+      - VELOCIRAPTOR_PORT=${VELOCIRAPTOR_PORT:-8000}
+      - WAZUH_API_URL=${WAZUH_API_URL:-https://wazuh.manager:55000}
+      - WAZUH_API_USER=${WAZUH_API_USER:-wazuh-wui}
+      - WAZUH_API_PASS=${WAZUH_API_PASS}
+      - WAZUH_INDEXER_URL=${WAZUH_INDEXER_URL:-https://wazuh.indexer:9200}
+      - WAZUH_INDEXER_USER=${WAZUH_INDEXER_USER:-admin}
+      - WAZUH_INDEXER_PASS=${WAZUH_INDEXER_PASS:-SecretPassword}
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-sentinelhq-internal-secret}
+      - DASHBOARD_INTERNAL_URL=http://shq-dashboard:8080
+    volumes:
+      - ./sentinelhq_api.yaml:/app/sentinelhq_api.yaml:ro
+      - ./license.key:/app/license.key:ro
+      # Uncomment on Linux host only (Docker Desktop uses shq-data volume instead):
+      # - /etc/machine-id:/etc/host-machine-id:ro
+      - shq-data:/app/data
+    networks:
+      - shq-net
+      - wazuh-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Dashboard (admin) ────────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ./dashboard
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-dashboard
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${DASHBOARD_PORT:-8082}:8080"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - SECRET_KEY=${SECRET_KEY:-changeme-in-production}
+      - DASHBOARD_USER=${DASHBOARD_USER:-admin}
+      - DASHBOARD_PASS=${DASHBOARD_PASS:-changeme}
+      - ORG_NAME=${ORG_NAME:-My Organization}
+      - HOST_HOSTNAME=${HOST_HOSTNAME:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LLM_API_URL=${LLM_API_URL:-https://openrouter.ai/api/v1}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-google/gemini-2.5-flash}
+      - WAZUH_API_URL=${WAZUH_API_URL:-https://wazuh.manager:55000}
+      - WAZUH_API_USER=${WAZUH_API_USER:-wazuh-wui}
+      - WAZUH_API_PASS=${WAZUH_API_PASS}
+      - WAZUH_VERIFY_SSL=${WAZUH_VERIFY_SSL:-false}
+      - MANAGER_PUBLIC_IP=${MANAGER_PUBLIC_IP:-192.168.1.177}
+      - OPENSEARCH_URL=${OPENSEARCH_URL:-https://wazuh.indexer:9200}
+      - OPENSEARCH_USER=${OPENSEARCH_USER:-admin}
+      - OPENSEARCH_PASS=${OPENSEARCH_PASS:-SecretPassword}
+      - OPENSEARCH_INDEX=${OPENSEARCH_INDEX:-wazuh-alerts-*}
+      - VELOCIRAPTOR_API_CONFIG=/app/sentinelhq_api.yaml
+      - VELOCIRAPTOR_URL=${VELOCIRAPTOR_URL:-192.168.1.177:8001}
+      - VELOCIRAPTOR_WAZUH_IPS=${MANAGER_PUBLIC_IP:-192.168.1.177}
+      - VELOCIRAPTOR_SERVER_IP=${MANAGER_PUBLIC_IP:-192.168.1.177}
+      - VELOCIRAPTOR_PORT=${VELOCIRAPTOR_PORT:-8000}
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-sentinelhq-internal-secret}
+    volumes:
+      - ./rules_export:/rules_export
+      - ./reports:/reports
+      - ./sentinelhq_api.yaml:/app/sentinelhq_api.yaml:ro
+      - ./license.key:/app/license.key
+      - ./telegram-bot:/app/ai:ro
+      # Uncomment on Linux host only (Docker Desktop uses shq-data volume instead):
+      # - /etc/machine-id:/app/data/host-machine-id:ro
+      - shq-data:/app/data
+    networks:
+      - shq-net
+      - wazuh-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Client Portal ────────────────────────────────────────────────────────────
+  portal:
+    build:
+      context: ./portal
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-portal
+    restart: unless-stopped
+    ports:
+      - "${PORTAL_PORT:-8083}:8080"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - SECRET_KEY=${SECRET_KEY:-changeme-in-production}
+      - ORG_NAME=${ORG_NAME:-My Organization}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    volumes:
+      - ./reports:/reports:ro
+    networks:
+      - shq-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Reporter ─────────────────────────────────────────────────────────────────
+  reporter:
+    build:
+      context: ./reporter
+      args:
+        CACHEBUST: ${CACHEBUST:-1}
+    container_name: shq-reporter
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-shq}:${DB_PASS:-changeme}@postgres/${DB_NAME:-sentinelhq}
+      - LLM_API_URL=${LLM_API_URL:-https://openrouter.ai/api/v1}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-google/gemini-2.5-flash}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - REPORT_EMAIL_TO=${REPORT_EMAIL_TO}
+      - ORG_NAME=${ORG_NAME:-My Organization}
+      - REPORT_DAY=${REPORT_DAY:-monday}
+      - REPORT_HOUR=${REPORT_HOUR:-8}
+    volumes:
+      - ./reports:/reports
+      - ./license.key:/app/license.key:ro
+    networks:
+      - shq-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+volumes:
+  shq-postgres:
+  shq-data:
+
+networks:
+  shq-net:
+    driver: bridge
+  wazuh-net:
+    driver: bridge

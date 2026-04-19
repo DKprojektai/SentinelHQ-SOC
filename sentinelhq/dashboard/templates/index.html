@@ -1,0 +1,2867 @@
+<!DOCTYPE html>
+<html id="html-root" lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SentinelHQ</title>
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script src="/static/i18n.js?v=29"></script>
+<style>
+:root{
+  --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e29;--border:#252a38;
+  --text:#c8cedd;--muted:#5a6176;--accent:#4f9cf9;
+  --green:#3ecf8e;--amber:#f59e0b;--red:#ef4444;--purple:#a78bfa;
+  --font:'JetBrains Mono','Fira Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.6;}
+.shell{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden;}
+aside{background:var(--bg2);border-right:1px solid var(--border);height:100vh;display:flex;flex-direction:column;}
+aside nav{flex:1;display:flex;flex-direction:column;overflow-y:auto;}
+main{padding:28px 32px;overflow-x:hidden;overflow-y:auto;height:100vh;box-sizing:border-box;}
+main.chat-page{overflow:hidden;padding:16px 32px;display:flex;flex-direction:column;}
+.logo{padding:16px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.logo .brand{font-size:15px;color:var(--accent);font-weight:600;letter-spacing:0;}
+.logo .org{font-size:10px;color:var(--muted);letter-spacing:.08em;margin-top:2px;}
+nav a{display:flex;align-items:center;gap:10px;padding:10px 18px;color:var(--muted);text-decoration:none;font-size:12px;border-left:2px solid transparent;transition:all .15s;}
+nav a:hover{color:var(--text);background:var(--bg3);}
+nav a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+.nav-sep{padding:14px 18px 4px;font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+.nav-bottom{margin-top:auto;padding:8px 0;display:flex;flex-direction:column;}
+.lang-btn{transition:all .15s;}.lang-btn.active{background:var(--accent)!important;color:#fff!important;border-color:var(--accent)!important;}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;}
+.stat .lbl{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.stat .val{font-size:26px;font-weight:600;}
+.stat .sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.v-accent{color:var(--accent);}.v-green{color:var(--green);}.v-amber{color:var(--amber);}.v-red{color:var(--red);}
+
+/* Health bar */
+.health-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:6px;}
+.health-fill{height:100%;border-radius:3px;transition:width .5s;}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.topbar h1{font-size:16px;font-weight:600;}
+.topbar .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+.tab{padding:8px 16px;font-size:12px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);margin-bottom:-1px;transition:color .15s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);}
+th{padding:8px 10px;font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:left;font-weight:400;}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+tbody tr:hover{background:var(--bg3);}
+td{padding:9px 10px;font-size:12px;}
+
+/* Badges */
+.score{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;min-width:34px;text-align:center;}
+.score.hi{background:rgba(239,68,68,.15);color:var(--red);}
+.score.md{background:rgba(245,158,11,.15);color:var(--amber);}
+.score.lo{background:rgba(79,156,249,.12);color:var(--accent);}
+.pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;text-transform:uppercase;}
+.pill.pending{background:rgba(245,158,11,.12);color:var(--amber);}
+.pill.approved{background:rgba(62,207,142,.12);color:var(--green);}
+.pill.dismissed{background:rgba(90,97,118,.2);color:var(--muted);}
+.pill.ready{background:rgba(62,207,142,.12);color:var(--green);}
+.pill.draft{background:rgba(167,139,250,.12);color:var(--purple);}
+.pill.true_positive{background:rgba(239,68,68,.12);color:var(--red);}
+.pill.false_positive{background:rgba(245,158,11,.12);color:var(--amber);}
+.pill.uncertain{background:rgba(167,139,250,.12);color:var(--purple);}
+.rdesc{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);}
+
+/* Buttons */
+.btn{padding:7px 16px;border-radius:6px;font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
+.btn-primary{background:rgba(79,156,249,.12);color:var(--accent);border-color:rgba(79,156,249,.3);}
+.btn-primary:hover{background:rgba(79,156,249,.22);}
+.btn-green{background:rgba(62,207,142,.12);color:var(--green);border-color:rgba(62,207,142,.3);}
+.btn-green:hover{background:rgba(62,207,142,.22);}
+.btn-red{background:rgba(239,68,68,.12);color:var(--red);border-color:rgba(239,68,68,.3);}
+.btn-red:hover{background:rgba(239,68,68,.22);}
+.btn-muted{background:var(--bg3);color:var(--muted);border-color:var(--border);}
+.btn-muted:hover{color:var(--text);}
+
+/* Cards */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px;}
+.card h3{font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;}
+
+/* Top rules list */
+.top-rules{list-style:none;}
+.top-rules li{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.top-rules li:last-child{border-bottom:none;}
+.rid{color:var(--accent);min-width:52px;font-size:11px;}
+.rcnt{color:var(--amber);min-width:36px;text-align:right;font-weight:600;}
+
+/* Shared filter bar */
+.fbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.fi{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--font);}
+.fi::placeholder{color:var(--muted);}
+.fi-sm{width:110px;}.fi-md{width:160px;}.fi-lg{width:200px;}
+.fi-clr{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--font);cursor:pointer;}
+.fi-clr:hover{color:var(--text);}
+
+/* Timeline bars */
+.tl-bars{display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:6px;}
+.tl-bar{flex:1;background:var(--accent);opacity:.5;border-radius:2px 2px 0 0;min-height:2px;}
+
+/* Detail overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-start;justify-content:flex-end;}
+.overlay.open{display:flex;}
+.detail{background:var(--bg2);border-left:1px solid var(--border);width:560px;height:100vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;}
+.detail h3{font-size:14px;}
+.close-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:4px 10px;cursor:pointer;font-family:var(--font);font-size:11px;}
+.close-btn:hover{color:var(--text);}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:5px 10px;}
+.kk{color:var(--muted);font-size:11px;padding-top:1px;}
+.kv-val{font-size:12px;word-break:break-all;}
+.log-s{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 11px;font-size:11px;color:var(--muted);word-break:break-all;white-space:pre-wrap;margin-bottom:5px;max-height:72px;overflow:hidden;}
+.xml-b{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:11px;font-size:11px;color:#94d4ff;white-space:pre-wrap;overflow-x:auto;}
+textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px;resize:vertical;min-height:56px;}
+textarea:focus{outline:none;border-color:var(--accent);}
+
+/* ── Chat pages ── */
+.chat-wrap{display:flex;flex-direction:column;flex:1;min-height:0;width:100%;}
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:16px 0;}
+.chat-bubble{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.chat-bubble.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px;}
+.chat-bubble.bot{align-self:flex-start;background:var(--bg3);color:var(--text);border-bottom-left-radius:3px;}
+.chat-bubble.system{align-self:flex-start;background:var(--bg2);color:var(--muted);font-size:12px;border-radius:8px;}
+.chat-bubble.thinking{color:var(--muted);font-style:italic;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.chat-input-row{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);}
+.chat-input-row textarea{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;font-size:13px;font-family:var(--font);resize:none;height:44px;max-height:120px;overflow-y:auto;}
+.chat-input-row textarea:focus{outline:none;border-color:var(--accent);}
+.chat-send-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0 18px;font-size:13px;cursor:pointer;white-space:nowrap;}
+.chat-send-btn:disabled{opacity:.4;cursor:default;}
+.artifact-list{display:flex;flex-direction:column;gap:6px;margin:8px 0;}
+.artifact-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);}
+.artifact-item:hover{border-color:var(--accent);}
+.artifact-item input[type=checkbox]{accent-color:var(--accent);margin-top:3px;flex-shrink:0;}
+.artifact-item label{cursor:pointer;font-size:12px;flex:1;min-width:0;}
+.artifact-item .art-name{font-weight:600;color:var(--text);}
+.artifact-item .art-desc{color:var(--muted);font-size:11px;display:block;white-space:pre-wrap;word-break:break-word;}
+.art-more-btn{color:var(--accent);cursor:pointer;font-size:10px;margin-left:4px;user-select:none;}
+.art-more-text{color:var(--muted);font-size:11px;white-space:pre-wrap;word-break:break-word;}
+.artifact-collect-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:12px;cursor:pointer;margin-top:6px;}
+/* LLM panel */
+.llm-status{display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg3);border-radius:8px;margin-bottom:16px;}
+.llm-dot{width:10px;height:10px;border-radius:50%;}
+.llm-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
+.llm-dot.off{background:var(--muted);}
+.toggle{position:relative;display:inline-block;width:44px;height:24px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:12px;transition:background .2s;cursor:pointer;}
+.toggle input:checked+.toggle-track{background:var(--green);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none;}
+.toggle input:checked~.toggle-thumb{transform:translateX(20px);}
+.readiness-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.r-card{background:var(--bg3);border-radius:6px;padding:12px;text-align:center;}
+.r-card .rv{font-size:22px;font-weight:600;margin-bottom:2px;}
+.r-card .rl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+/* Filter row */
+.filter-row{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+.filter-row select,.filter-row input{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:6px 10px;}
+.filter-row select:focus,.filter-row input:focus{outline:none;border-color:var(--accent);}
+
+/* Recommendations */
+.rec-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;}
+.rec-pri{font-size:10px;padding:3px 8px;border-radius:4px;text-transform:uppercase;white-space:nowrap;}
+.rec-pri.critical{background:rgba(239,68,68,.15);color:var(--red);}
+.rec-pri.high{background:rgba(245,158,11,.15);color:var(--amber);}
+.rec-pri.medium{background:rgba(79,156,249,.12);color:var(--accent);}
+.rec-pri.low{background:rgba(90,97,118,.2);color:var(--muted);}
+.rec-body{flex:1;}
+.rec-title{font-size:13px;margin-bottom:4px;}
+.rec-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.empty{padding:40px;text-align:center;color:var(--muted);}
+code{color:var(--accent);font-family:var(--font);}
+
+  .ip-tip{position:relative;cursor:help;color:var(--accent);}
+  .ip-tip::after{content:attr(data-tip);display:none;position:absolute;bottom:calc(100% + 4px);
+    left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);
+    border-radius:6px;padding:5px 10px;font-size:11px;color:var(--text);white-space:nowrap;
+    z-index:200;pointer-events:none;min-width:140px;text-align:center;}
+  .ip-tip:hover::after{display:block;}
+  /* Playbook description tooltip */
+  #pb-global-tip{display:none;position:fixed;background:var(--bg2);border:1px solid var(--border);
+    border-radius:8px;padding:10px 14px;font-size:11px;color:var(--text);
+    z-index:9999;min-width:240px;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.8);pointer-events:none;}
+  .pb-tip-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:3px 0;border-bottom:1px solid var(--border);}
+  .pb-tip-row:last-child{border-bottom:none;}
+  .pb-tip-lbl{color:var(--muted);white-space:nowrap;flex-shrink:0;}
+  .pb-tip-val{color:var(--accent);font-weight:600;text-align:right;}
+  .pb-tip-val.amber{color:var(--amber);}
+  .pb-tip-procs{color:var(--text);font-weight:normal;font-size:10px;white-space:normal;line-height:1.6;text-align:left;max-width:360px;}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+  <div class="logo">
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+      <defs>
+        <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#00d4ff"/>
+          <stop offset="100%" style="stop-color:#0066ff"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2 L28 7 L28 16 C28 22 22 27 16 30 C10 27 4 22 4 16 L4 7 Z" fill="url(#lg2)"/>
+      <ellipse cx="16" cy="16" rx="6" ry="4" fill="#0a0a1a"/>
+      <circle cx="16" cy="16" r="2.5" fill="#00d4ff"/>
+      <circle cx="16" cy="16" r="1" fill="#fff"/>
+    </svg>
+    <div>
+      <div class="brand">SentinelHQ</div>
+      <div class="org" id="org-name">Loading...</div>
+    </div>
+  </div>
+  <div class="nav-sep" data-i18n="nav_section_main">Pagrindinė</div>
+  <nav>
+    <a href="#" class="active" onclick="showPage('overview',this);return false">🏠&nbsp; <span data-i18n="nav_overview">Overview</span></a>
+    <a href="#" onclick="showPage('candidates',this);return false">🎯&nbsp; <span data-i18n="nav_candidates">Candidates</span></a>
+    <a href="#" onclick="showPage('analyses',this);return false">🧠&nbsp; <span data-i18n="nav_analyses">LLM Analyses</span></a>
+    <a href="#" onclick="showPage('llm-advisor',this);return false">💬&nbsp; <span data-i18n="nav_llm_advisor">LLM Patarėjas</span></a>
+    <a href="#" onclick="showPage('llm-forensics',this);return false">🔬&nbsp; <span data-i18n="nav_llm_forensics">LLM Forenzikai</span></a>
+    <div class="nav-sep" data-i18n="nav_section_mgmt">Valdymas</div>
+    <a href="#" onclick="showPage('llm',this);return false">🤖&nbsp; <span data-i18n="nav_llm_agent">LLM Agent</span></a>
+    <a href="#" onclick="showPage('correlations',this);return false">🔗&nbsp; <span data-i18n="nav_correlations">Correlations</span></a>
+    <a href="#" onclick="showPage('agents',this);return false">🖥️&nbsp; <span data-i18n="nav_agents">Agentai</span></a>
+    <a href="#" onclick="showPage('portal-users',this);return false">👥&nbsp; <span data-i18n="nav_clients">Klientų prieiga</span></a>
+    <a href="#" onclick="showPage('admins',this);return false">👤&nbsp; <span data-i18n="nav_admins">Administratoriai</span></a>
+    <a href="#" onclick="showPage('blocked',this);return false">🚫&nbsp; <span data-i18n="nav_blocked">Blokuoti IP</span></a>
+    <a href="#" onclick="showPage('playbooks',this);return false">📋&nbsp; <span data-i18n="nav_playbooks">Playbooks</span></a>
+    <a href="#" onclick="showPage('license',this);return false">🔑&nbsp; <span data-i18n="nav_license">Licencija</span></a>
+    <a href="/setup-mfa">🔐&nbsp; <span data-i18n="nav_mfa">MFA Setup</span></a>
+    <a href="/logout">🚪&nbsp; <span data-i18n="nav_logout">Atsijungti</span></a>
+    <div class="nav-bottom">
+      <div style="display:flex;justify-content:center;gap:6px;padding:8px 18px">
+        <button class="lang-btn" data-lang="lt" onclick="setLang('lt')" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:11px;padding:3px 8px;cursor:pointer;font-family:var(--font)">LT</button>
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:11px;padding:3px 8px;cursor:pointer;font-family:var(--font)">EN</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 18px 12px;border-top:1px solid var(--border)">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(79,156,249,.15);border:1px solid rgba(79,156,249,.3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>
+        <div style="overflow:hidden">
+          <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ username }}</div>
+          <div style="font-size:10px;color:var(--muted)" data-i18n="lbl_role_admin">Administratorius</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</aside>
+
+<main>
+
+<!-- OVERVIEW -->
+<div id="page-overview">
+  {% if prev_login %}
+  <div id="nis2-banner" style="display:flex;align-items:center;justify-content:space-between;background:rgba(79,156,249,.08);border:1px solid rgba(79,156,249,.2);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;">
+    <span>🔐 <b data-i18n="lbl_last_login_banner">Paskutinis prisijungimas:</b> <span id="nis2-time">{{ prev_login[:16]|replace('T',' ') }}</span>{% if prev_login_ip %} &nbsp;·&nbsp; 🌐 <code>{{ prev_login_ip }}</code>{% endif %}</span>
+    <button onclick="document.getElementById('nis2-banner').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+  </div>
+  <script>
+    (function(){
+      var iso="{{ prev_login }}";
+      var d=new Date(iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z');
+      var pad=function(n){return String(n).padStart(2,'0');};
+      document.getElementById('nis2-time').textContent=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+    })();
+  </script>
+  {% endif %}
+  <div class="topbar">
+    <div><h1 data-i18n="nav_overview">Overview</h1><div class="sub" id="last-refresh"></div></div>
+    <button class="btn btn-primary" onclick="refreshAll()">&#8635; <span data-i18n="btn_refresh">Atnaujinti</span></button>
+  </div>
+  <div id="license-limit-banner" style="display:none;align-items:center;justify-content:space-between;background:rgba(255,160,0,.08);border:1px solid rgba(255,160,0,.3);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;">
+    <span>⚠️ <span id="license-limit-text"></span> &nbsp;·&nbsp; <a href="#" onclick="showPage('license',null);return false" style="color:var(--accent)" data-i18n="lbl_upgrade">Licencija</a></span>
+    <button onclick="document.getElementById('license-limit-banner').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+  </div>
+  <div class="stats-grid">
+    <div class="stat"><div class="lbl" data-i18n="stat_alerts_total">Alertai iš viso</div><div class="val v-accent" id="s-total">—</div><div class="sub" id="s-24h">24h: —</div></div>
+    <div class="stat"><div class="lbl" data-i18n="stat_health">Sveikata</div><div class="val" id="s-health">—</div><div class="health-bar"><div class="health-fill" id="s-health-bar"></div></div></div>
+    <div class="stat"><div class="lbl" data-i18n="stat_awaiting">Laukia review</div><div class="val v-amber" id="s-pending">—</div><div class="sub" data-i18n="stat_pending">Noise kandidatai</div></div>
+    <div class="stat"><div class="lbl" data-i18n="stat_llm_status">LLM statusas</div><div class="val" id="s-llm">—</div><div class="sub" id="s-llm-sub">—</div></div>
+  </div>
+  <div class="two-col">
+    <div class="card"><h3 data-i18n="top_noisy_rules">Top noisy rules (72h)</h3><ul class="top-rules" id="top-rules-list"></ul></div>
+    <div class="card"><h3 data-i18n="alert_volume">Alert volume (72h)</h3><div class="tl-bars" id="tl-overview"></div><div style="font-size:10px;color:var(--muted);margin-top:6px" data-i18n="hourly_counts">Valandiniai kiekiai</div></div>
+  </div>
+  <div style="margin-bottom:14px;font-size:12px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase" data-i18n="noise_candidates">Triukšmo kandidatai (≥20)</div>
+  <div class="tbl-wrap"><table><thead><tr><th data-i18n="th_score">Score</th><th data-i18n="th_rule">Rule</th><th data-i18n="th_level">Lv</th><th data-i18n="th_source">Šaltinis</th><th data-i18n="th_target">Tikslas</th><th data-i18n="th_agent">Agentas</th><th data-i18n="th_rate">/h</th><th data-i18n="th_count">Kiekis</th><th data-i18n="th_status">Statusas</th></tr></thead><tbody id="top-cands-body"></tbody></table></div>
+</div>
+
+<!-- CANDIDATES -->
+<div id="page-candidates" style="display:none">
+  <div class="topbar">
+    <div><h1 data-i18n="page_candidates_title">Noise Candidates</h1><div class="sub" data-i18n="page_candidates_sub">Peržiūrėk ir patvirtink suppress taisykles</div></div>
+    <button class="btn btn-red" id="reboot-btn" onclick="wazuhReboot()" style="display:none">
+      <span data-i18n="btn_reboot">🔄 Paleisti iš naujo</span> <span id="reboot-count" style="background:rgba(255,255,255,.2);border-radius:10px;padding:1px 8px;margin-left:6px">0</span>
+    </button>
+  </div>
+  <div class="filter-row" style="flex-wrap:wrap;gap:8px">
+    <select id="f-status" onchange="loadCands()"><option value="pending" data-i18n="status_pending">Pending</option><option value="approved" data-i18n="status_approved">Approved</option><option value="dismissed" data-i18n="status_dismissed">Dismissed</option></select>
+    <select id="f-score" onchange="loadCands()"><option value="0" data-i18n="filter_all">Visi</option><option value="20" selected>≥20</option><option value="30">≥30</option><option value="40">≥40</option><option value="60">≥60</option></select>
+    <input id="f-agent" type="text" data-i18n-ph="ph_agent" oninput="renderCandsFiltered()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--font);width:130px">
+    <input id="f-rule" type="text" data-i18n-ph="ph_rule_id" oninput="renderCandsFiltered()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--font);width:100px">
+    <input id="f-desc" type="text" data-i18n-ph="ph_desc" oninput="renderCandsFiltered()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--font);width:180px">
+    <select id="f-level" onchange="renderCandsFiltered()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 8px;font-size:12px;font-family:var(--font)">
+      <option value="" data-i18n="filter_all_lv">Visi Lv</option><option value="12">Lv ≥12</option><option value="9">Lv ≥9</option><option value="7">Lv ≥7</option>
+    </select>
+    <span id="cands-count" style="font-size:11px;color:var(--muted);margin-left:auto;align-self:center"></span>
+    <button class="btn btn-muted" onclick="clearCandsFilters()" style="font-size:11px;padding:4px 10px" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr>
+    <th style="cursor:pointer" onclick="sortCands('noise_score')" data-i18n="th_score">Score ↕</th>
+    <th style="cursor:pointer" onclick="sortCands('rule_id')" data-i18n="th_rule">Rule ↕</th>
+    <th style="cursor:pointer" onclick="sortCands('rule_level')" data-i18n="th_level">Lv ↕</th>
+    <th data-i18n="th_desc">Aprašymas</th>
+    <th data-i18n="th_source">Šaltinis</th>
+    <th data-i18n="th_target">Tikslas</th>
+    <th style="cursor:pointer" onclick="sortCands('agent_name')" data-i18n="th_agent">Agentas ↕</th>
+    <th style="cursor:pointer" onclick="sortCands('hourly_rate')" data-i18n="th_rate">/h ↕</th>
+    <th style="cursor:pointer" onclick="sortCands('occurrence_count')" data-i18n="th_count">Kiekis ↕</th>
+    <th data-i18n="th_status">Statusas</th>
+  </tr></thead><tbody id="cands-body"></tbody></table></div>
+  <div id="cands-empty" class="empty" style="display:none" data-i18n="no_data">Nėra kandidatų</div>
+</div>
+
+
+<!-- LLM ANALYSES -->
+<div id="page-analyses" style="display:none">
+  <div class="topbar"><div><h1 data-i18n="page_analyses_title">LLM Analizės</h1><div class="sub" data-i18n="page_analyses_sub">AI verdiktai (Lv9+ alertai)</div></div></div>
+  <div class="fbar">
+    <select id="f-verdict" class="fi" onchange="loadAnalyses()">
+      <option value="" data-i18n="filter_verdict_all">Visi verdiktai</option>
+      <option value="true_positive">True Positive</option>
+      <option value="false_positive">False Positive</option>
+      <option value="uncertain">Uncertain</option>
+    </select>
+    <input id="fa-agent" class="fi fi-md" type="text" data-i18n-ph="ph_agent" oninput="renderAnalysesFiltered()">
+    <input id="fa-rule" class="fi fi-sm" type="text" data-i18n-ph="ph_rule_id" oninput="renderAnalysesFiltered()">
+    <input id="fa-desc" class="fi fi-lg" type="text" data-i18n-ph="ph_desc" oninput="renderAnalysesFiltered()">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+      <input type="checkbox" id="f-llm-only" onchange="loadAnalyses()" checked style="accent-color:var(--accent)">
+      <span data-i18n="filter_llm_only">Tik realios LLM analizės</span>
+    </label>
+    <button class="fi-clr" onclick="clearAnalysesFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="analyses-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr>
+    <th data-i18n="th_verdict">Verdiktas</th>
+    <th data-i18n="th_confidence">Pasitikėjimas</th>
+    <th data-i18n="th_threat">Grėsmė</th>
+    <th data-i18n="th_rule">Rule</th>
+    <th data-i18n="th_desc">Aprašymas</th>
+    <th data-i18n="th_agent">Agentas</th>
+    <th data-i18n="th_level">Level</th>
+    <th data-i18n="th_analyzed">Analizuota</th>
+  </tr></thead><tbody id="analyses-body"></tbody></table></div>
+</div>
+
+<!-- LLM AGENT -->
+<div id="page-llm" style="display:none">
+  <div class="topbar"><div><h1 data-i18n="page_llm_title">LLM Agent</h1><div class="sub" data-i18n="page_llm_sub">Gemini analizės valdymas</div></div></div>
+
+  <div class="llm-status">
+    <div class="llm-dot" id="llm-dot"></div>
+    <div style="flex:1">
+      <div style="font-size:13px" id="llm-status-text"></div>
+      <div style="font-size:11px;color:var(--muted)" id="llm-status-sub"></div>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="llm-toggle" onchange="toggleLLM(this.checked)">
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </label>
+  </div>
+
+  <div style="margin-bottom:14px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em" data-i18n="lbl_readiness">Pasiruošimo rodikliai</div>
+  <div class="readiness-grid">
+    <div class="r-card"><div class="rv v-accent" id="r-total">—</div><div class="rl" data-i18n="lbl_alerts_db">Alertai DB</div></div>
+    <div class="r-card"><div class="rv v-green" id="r-tp">—</div><div class="rl">True Positives (AI)</div></div>
+    <div class="r-card"><div class="rv v-amber" id="r-fp">—</div><div class="rl">False Positives (AI)</div></div>
+    <div class="r-card"><div class="rv v-accent" id="r-real-llm">—</div><div class="rl" data-i18n="lbl_real_llm">Realios LLM</div></div>
+    <div class="r-card"><div class="rv v-red" id="r-suppressed">—</div><div class="rl" title="Taisyklių kurios daugiau nebesiųs į LLM" data-i18n="lbl_suppressed">Slopinamos taisyklės</div></div>
+    <div class="r-card"><div class="rv" id="r-cost">—</div><div class="rl" data-i18n="lbl_cost">Est. kaina ($)</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h3 data-i18n="lbl_config">Konfigūracija</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="grid-column:1/-1">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_llm_api">LLM API</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="llm-api-url" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:12px;color:var(--muted)"></div>
+          <button class="btn btn-muted" style="padding:6px 12px;font-size:11px" onclick="pingLLM()" data-i18n="btn_ping">✓ Ping</button>
+          <span id="ping-result" style="font-size:11px"></span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--muted)">
+          <span data-i18n="lbl_model">Modelis:</span> <span id="llm-model-display" style="color:var(--accent)">—</span>
+          &nbsp;·&nbsp; <code>.env</code> → <code>LLM_API_URL</code>, <code>LLM_API_KEY</code>, <code>LLM_MODEL</code>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_min_level">Min. level analizei</div>
+        <input type="number" id="cfg-level" min="1" max="15" value="7" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_batch">Batch dydis</div>
+        <input type="number" id="cfg-batch" min="1" max="50" value="10" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_auto_isolate">Auto-izoliacija (level ≥)</div>
+        <input type="number" id="cfg-isolate" min="7" max="15" value="12" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_escalation">Eskalavimas (min)</div>
+        <input type="number" id="cfg-escalation" min="5" max="120" value="15" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_digest">Digest intervalas (min)</div>
+        <input type="number" id="cfg-digest" min="15" max="1440" value="60" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;">
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="saveLLMConfig()" data-i18n="btn_save">✓ Išsaugoti</button>
+      <div style="font-size:11px;color:var(--muted)" id="cfg-saved"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="lbl_vacation">Atostogų režimas</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6" id="vac-desc"></div>
+    <button class="btn btn-amber" id="vac-btn" onclick="toggleVacation()" data-i18n="btn_vacation_on">🏖 Įjungti atostogų režimą</button>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="lbl_tg_notifications">Telegram pranešimai</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="tg-alerts" onchange="saveTgConfig()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+        <span data-i18n="lbl_tg_alerts">🔥 Saugos alertai</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="tg-correlations" onchange="saveTgConfig()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+        <span data-i18n="lbl_tg_correlations">🔗 Koreliacijos</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="tg-digest" onchange="saveTgConfig()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+        <span data-i18n="lbl_tg_digest">📊 Valandinis digest</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- PORTAL USERS -->
+<div id="page-portal-users" style="display:none">
+  <div class="topbar">
+    <div><h1 data-i18n="page_clients_title">Klientų prieiga</h1><div class="sub" data-i18n="page_clients_sub">Portalo vartotojų valdymas</div></div>
+    <button class="btn btn-green" onclick="openNewUser()" data-i18n="btn_new_user">+ Naujas vartotojas</button>
+  </div>
+  <div class="fbar">
+    <input id="fu-email" class="fi fi-lg" type="text" data-i18n-ph="ph_email" oninput="renderUsersFiltered()">
+    <select id="fu-status" class="fi" onchange="renderUsersFiltered()">
+      <option value="" data-i18n="filter_all_generic">Visi</option>
+      <option value="active" data-i18n="filter_active">Aktyvūs</option>
+      <option value="inactive" data-i18n="filter_inactive">Neaktyvūs</option>
+    </select>
+    <button class="fi-clr" onclick="clearUsersFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="users-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th data-i18n="th_email">El. paštas</th><th>MFA</th><th data-i18n="th_status">Statusas</th>
+      <th data-i18n="th_last_login">Paskutinis prisijungimas</th><th data-i18n="th_created">Sukurta</th><th data-i18n="th_action">Veiksmai</th>
+    </tr></thead>
+    <tbody id="portal-users-body"></tbody>
+  </table></div>
+  <div id="portal-users-empty" class="empty" style="display:none" data-i18n="users_empty">Nėra vartotojų</div>
+</div>
+
+<!-- NEW USER MODAL -->
+<div id="new-user-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:14px" data-i18n="modal_new_user">Naujas portalo vartotojas</h3>
+      <button class="close-btn" onclick="closeNewUser()">&#10005;</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px" data-i18n="lbl_email">El. paštas</div>
+      <input type="email" id="nu-email" placeholder="klientas@imone.lt"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px" data-i18n="lbl_password">Slaptažodis (min. 8 simboliai)</div>
+      <input type="password" id="nu-pass" placeholder="••••••••"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+    <div id="nu-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-green" onclick="createUser()" style="flex:1" data-i18n="btn_create">✓ Sukurti</button>
+      <button class="btn btn-muted" onclick="closeNewUser()" data-i18n="btn_cancel">Atšaukti</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div id="edit-user-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:14px" id="eu-title" data-i18n="modal_edit_user">Redaguoti vartotoją</h3>
+      <button class="close-btn" onclick="closeEditUser()">&#10005;</button>
+    </div>
+    <input type="hidden" id="eu-id">
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px" data-i18n="lbl_new_password">Naujas slaptažodis (palikti tuščią jei nekeičia)</div>
+      <input type="password" id="eu-pass" placeholder="••••••••"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:20px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="eu-active"> <span data-i18n="lbl_active_account">Aktyvi paskyra</span>
+      </label>
+    </div>
+    <div id="eu-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-green" onclick="saveUser()" style="flex:1" data-i18n="btn_save">✓ Išsaugoti</button>
+      <button class="btn btn-red" onclick="resetMFA()" style="font-size:11px" data-i18n="btn_reset_mfa">🔒 Reset MFA</button>
+      <button class="btn btn-muted" onclick="closeEditUser()" data-i18n="btn_cancel">Atšaukti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMINS -->
+<!-- PLAYBOOKS -->
+<div id="page-playbooks" style="display:none">
+  <div class="topbar">
+    <div><h1 data-i18n="nav_playbooks">Scenarijai</h1><div class="sub" data-i18n="page_playbooks_sub">Automatinio reagavimo taisyklės</div></div>
+    <button class="btn btn-green" onclick="loadPlaybooks()" data-i18n="btn_refresh">↻ Atnaujinti</button>
+  </div>
+  <div class="fbar">
+    <input id="fpb-sig" class="fi fi-md" type="text" data-i18n-ph="ph_signal" oninput="renderPlaybooksFiltered()">
+    <input id="fpb-desc" class="fi fi-lg" type="text" data-i18n-ph="ph_desc" oninput="renderPlaybooksFiltered()">
+    <select id="fpb-enabled" class="fi" onchange="renderPlaybooksFiltered()">
+      <option value="" data-i18n="filter_all_generic">Visi</option>
+      <option value="1" data-i18n="filter_enabled">Įjungti</option>
+      <option value="0" data-i18n="filter_disabled">Išjungti</option>
+    </select>
+    <select id="fpb-isolate" class="fi" onchange="renderPlaybooksFiltered()">
+      <option value="" data-i18n="filter_all_iso_pb">Visa izoliacija</option>
+      <option value="1" data-i18n="filter_iso_yes">Su izoliacija</option>
+      <option value="0" data-i18n="filter_iso_no">Be izoliacijos</option>
+    </select>
+    <button class="fi-clr" onclick="clearPlaybooksFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="playbooks-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th data-i18n="th_enabled">Įjungta</th><th data-i18n="th_signal">Signalas</th><th data-i18n="th_desc">Aprašymas</th><th data-i18n="th_auto_isolate">Auto-izoliuoti</th><th>Telegram</th><th data-i18n="th_min_severity">Min severity</th><th data-i18n="th_cooldown">Cooldown (min)</th><th data-i18n="th_action">Veiksmas</th>
+    </tr></thead>
+    <tbody id="playbooks-body"></tbody>
+  </table></div>
+  <div id="playbooks-empty" class="empty" style="display:none">Nėra playbook'ų</div>
+</div>
+
+<!-- PLAYBOOK EDIT MODAL -->
+<div id="playbook-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:480px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:14px" data-i18n="modal_edit_playbook">Redaguoti Playbook</h3>
+      <button class="close-btn" onclick="closePlaybookModal()">&#10005;</button>
+    </div>
+    <input type="hidden" id="pb-id">
+    <div style="display:grid;gap:14px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_signal">Signalas</div>
+        <input id="pb-trigger" class="inp" readonly style="opacity:.6">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="th_desc">Aprašymas</div>
+        <input id="pb-desc" class="inp" data-i18n-ph="th_desc">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="lbl_min_severity_range">Min Severity (1-15)</div>
+          <input id="pb-severity" class="inp" type="number" min="1" max="15">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px" data-i18n="th_cooldown">Cooldown (min)</div>
+          <input id="pb-cooldown" class="inp" type="number" min="0">
+        </div>
+      </div>
+      <div style="display:flex;gap:24px;align-items:center">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="pb-enabled"> <span data-i18n="th_enabled">Įjungta</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="pb-isolate"> <span data-i18n="th_auto_isolate">Auto-izoliuoti</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="pb-notify"> Telegram
+        </label>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn" onclick="closePlaybookModal()" style="background:var(--bg3);color:var(--muted);border:1px solid var(--border)" data-i18n="btn_cancel">Atšaukti</button>
+      <button class="btn btn-green" onclick="savePlaybook()" data-i18n="btn_save">Išsaugoti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── License page ── -->
+<div id="page-license" style="display:none">
+  <div class="topbar">
+    <div><h1 data-i18n="nav_license">Licencija</h1><div class="sub" data-i18n="page_license_sub">Licencijos būsena ir aktyvacija</div></div>
+    <button class="btn btn-green" onclick="loadLicense()" data-i18n="btn_refresh">↻ Atnaujinti</button>
+  </div>
+
+  <!-- Status card -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div class="stat" id="lic-status-card">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px" data-i18n="lbl_lic_status">Būsena</div>
+      <div id="lic-badge" style="font-size:20px;font-weight:700;margin-bottom:6px">—</div>
+      <div id="lic-edition" style="font-size:12px;color:var(--muted)">—</div>
+    </div>
+    <div class="stat">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px" data-i18n="lbl_lic_info">Informacija</div>
+      <div style="font-size:12px;display:grid;gap:4px">
+        <div><span style="color:var(--muted)" data-i18n="lbl_issued_to">Išduota:</span> <span id="lic-issued-to" style="color:var(--text)">—</span></div>
+        <div><span style="color:var(--muted)" data-i18n="lbl_expires">Galioja iki:</span> <span id="lic-expires" style="color:var(--text)">—</span></div>
+        <div><span style="color:var(--muted)" data-i18n="lbl_max_agents">Max agentų:</span> <span id="lic-max-agents" style="color:var(--text)">—</span></div>
+        <div><span style="color:var(--muted)" data-i18n="lbl_max_clients">Max klientų:</span> <span id="lic-max-clients" style="color:var(--text)">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HWID / fingerprint -->
+  <div class="stat" style="margin-bottom:24px">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px" data-i18n="lbl_fingerprint">Sistemos identifikatorius</div>
+    <div style="font-size:12px;display:grid;gap:4px;margin-bottom:12px">
+      <div><span style="color:var(--muted)">ID:</span> <code id="lic-hwid" style="font-size:10px;color:var(--accent);word-break:break-all">—</code></div>
+    </div>
+    <button class="btn" onclick="generateLicenseRequest()" data-i18n="btn_gen_request">📋 Generuoti aktyvacijos užklausą</button>
+    <div id="lic-req-msg" style="margin-top:10px;font-size:12px;display:none"></div>
+  </div>
+
+  <!-- Agents list -->
+  <div class="stat" style="margin-bottom:24px">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px" data-i18n="lbl_lic_agents">Agentai</div>
+    <div id="lic-agents-list" style="font-size:12px;display:grid;gap:4px">—</div>
+  </div>
+
+
+  <!-- Activate -->
+  <div class="stat">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px" data-i18n="lbl_activate">Aktyvuoti licenciją</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px" data-i18n="lbl_activate_hint">Įklijuokite .key failo turinį arba įkelkite failą</div>
+    <textarea id="lic-key-input" placeholder="{&quot;edition&quot;: &quot;pro&quot;, ...}" style="width:100%;height:120px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--font);font-size:10px;color:var(--text);resize:none;margin-bottom:10px"></textarea>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-green" onclick="activateLicense()" data-i18n="btn_activate">🔑 Aktyvuoti</button>
+      <label class="btn" style="cursor:pointer">
+        <span data-i18n="btn_upload_key">📂 Įkelti .key failą</span>
+        <input type="file" accept=".key,.json" style="display:none" onchange="loadLicenseFile(this)">
+      </label>
+    </div>
+    <div id="lic-activate-msg" style="margin-top:12px;font-size:12px;display:none"></div>
+  </div>
+</div>
+
+<div id="page-admins" style="display:none">
+  <div class="topbar">
+    <div><h1 data-i18n="nav_admins">Administratoriai</h1><div class="sub" data-i18n="page_admins_sub">Dashboard prisijungimo vartotojai</div></div>
+    <button class="btn btn-green" onclick="openNewAdmin()" data-i18n="btn_new_admin">+ Naujas administratorius</button>
+  </div>
+  <div class="fbar">
+    <input id="fadm-name" class="fi fi-md" type="text" data-i18n-ph="ph_username" oninput="renderAdminsFiltered()">
+    <button class="fi-clr" onclick="clearAdminsFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="admins-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th data-i18n="th_username">Vartotojo vardas</th><th>MFA</th><th data-i18n="th_last_login">Paskutinis prisijungimas</th><th data-i18n="th_created">Sukurta</th><th data-i18n="th_action">Veiksmai</th>
+    </tr></thead>
+    <tbody id="admins-body"></tbody>
+  </table></div>
+  <div id="admins-empty" class="empty" style="display:none">Nėra administratorių</div>
+</div>
+
+<!-- NEW ADMIN MODAL -->
+<div id="new-admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:14px" data-i18n="btn_new_admin">Naujas administratorius</h3>
+      <button class="close-btn" onclick="closeNewAdmin()">&#10005;</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px" data-i18n="th_username">Vartotojo vardas</div>
+      <input type="text" id="na-user" placeholder="adminvardas"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px" data-i18n="lbl_password">Slaptažodis (min. 8 simboliai)</div>
+      <input type="password" id="na-pass" placeholder="••••••••"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+    <div id="na-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-green" onclick="createAdmin()" style="flex:1" data-i18n="btn_create">✓ Sukurti</button>
+      <button class="btn btn-muted" onclick="closeNewAdmin()" data-i18n="btn_cancel">Atšaukti</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ADMIN MODAL -->
+<div id="edit-admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:14px" id="ea-title" data-i18n="modal_edit_admin">Redaguoti administratorių</h3>
+      <button class="close-btn" onclick="closeEditAdmin()">&#10005;</button>
+    </div>
+    <input type="hidden" id="ea-id">
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px" data-i18n="lbl_new_password">Naujas slaptažodis (palikti tuščią jei nekeičia)</div>
+      <input type="password" id="ea-pass" placeholder="••••••••"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+    <div id="ea-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-green" onclick="saveAdmin()" style="flex:1" data-i18n="btn_save">✓ Išsaugoti</button>
+      <button class="btn btn-muted" style="font-size:11px" onclick="resetAdminMFA()" data-i18n="btn_reset_mfa">🔒 Reset MFA</button>
+      <button class="btn btn-red" id="ea-delete-btn" onclick="deleteAdmin()" data-i18n="btn_delete">🗑 Ištrinti</button>
+      <button class="btn btn-muted" onclick="closeEditAdmin()" data-i18n="btn_cancel">Atšaukti</button>
+    </div>
+  </div>
+</div>
+
+<!-- BLOCKED IPS -->
+<div id="page-blocked" style="display:none">
+  <div class="topbar">
+    <div><h1 data-i18n="nav_blocked">Blokuoti IP</h1><div class="sub" data-i18n="page_blocked_sub">Brute-force apsauga — užblokuoti adresai</div></div>
+    <button class="btn" onclick="loadBlockedIPs()" style="background:var(--bg3);color:var(--muted);border:1px solid var(--border)" data-i18n="btn_refresh">↻ Atnaujinti</button>
+  </div>
+  <div class="fbar">
+    <input id="fb-ip" class="fi fi-md" type="text" data-i18n-ph="ph_ip" oninput="renderBlockedFiltered()">
+    <input id="fb-reason" class="fi fi-lg" type="text" data-i18n-ph="ph_reason" oninput="renderBlockedFiltered()">
+    <select id="fb-status" class="fi" onchange="renderBlockedFiltered()">
+      <option value="" data-i18n="filter_all_generic">Visi</option>
+      <option value="active" data-i18n="filter_active_block">Aktyvūs blokaviai</option>
+      <option value="unblocked" data-i18n="filter_unblocked">Atblokuoti</option>
+    </select>
+    <button class="fi-clr" onclick="clearBlockedFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="blocked-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th>IP</th><th data-i18n="th_source">Šaltinis</th><th data-i18n="th_blocked_at">Užblokuota</th><th data-i18n="th_blocked_until">Blokuota iki</th><th data-i18n="th_reason">Priežastis</th><th data-i18n="th_unblocked">Atblokuota</th><th data-i18n="th_action">Veiksmas</th>
+    </tr></thead>
+    <tbody id="blocked-ips-body"></tbody>
+  </table></div>
+  <div id="blocked-ips-empty" class="empty" style="display:none">Nėra užblokuotų IP</div>
+</div>
+
+<!-- CORRELATIONS -->
+<div id="page-correlations" style="display:none">
+  <div class="topbar"><div><h1 data-i18n="page_corr_title">Koreliacijos</h1><div class="sub" data-i18n="page_corr_sub">Aptiktos atakų grandinės</div></div></div>
+  <div class="tabs">
+    <button class="tab active" onclick="loadCorr('open',this)" data-i18n="corr_open">Atviros</button>
+    <button class="tab" onclick="loadCorr('investigating',this)" data-i18n="corr_investigating">Tiriamos</button>
+    <button class="tab" onclick="loadCorr('resolved',this)" data-i18n="corr_resolved">Išspręstos</button>
+    <button class="tab" onclick="loadCorr('false_positive',this)">False Positive</button>
+  </div>
+  <div class="fbar">
+    <input id="fc-agent" class="fi fi-md" type="text" data-i18n-ph="ph_agent" oninput="renderCorrFiltered()">
+    <input id="fc-type" class="fi fi-md" type="text" data-i18n-ph="ph_type" oninput="renderCorrFiltered()">
+    <input id="fc-desc" class="fi fi-lg" type="text" data-i18n-ph="ph_desc" oninput="renderCorrFiltered()">
+    <button class="fi-clr" onclick="clearCorrFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="corr-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr>
+    <th data-i18n="th_severity">Severity</th><th data-i18n="th_pattern">Tipas</th><th data-i18n="th_agent">Agentas</th><th data-i18n="th_desc">Aprašymas</th><th data-i18n="th_alerts">Alertai</th><th data-i18n="th_detected">Aptikta</th><th data-i18n="th_action">Veiksmas</th>
+  </tr></thead><tbody id="corr-body"></tbody></table></div>
+  <div id="corr-empty" class="empty" style="display:none" data-i18n="no_data">Nėra koreliacijų</div>
+</div>
+
+<!-- ── Agents page ─────────────────────────────────────────────────────────── -->
+<div id="page-agents" style="display:none">
+  <div class="topbar">
+    <div>
+      <h1 data-i18n="page_agents_title">Agentai</h1>
+      <div class="sub" data-i18n="page_agents_sub">Wazuh agentų valdymas ir izoliacija</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openDeployModal()" style="background:var(--accent);border:1px solid var(--accent);border-radius:6px;color:#fff;font-family:var(--font);font-size:12px;padding:6px 14px;cursor:pointer">➕ <span data-i18n="btn_add_agent">Prijungti agentą</span></button>
+      <button onclick="loadAgents()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:6px 14px;cursor:pointer" data-i18n="btn_refresh">↻ Atnaujinti</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="fbar" style="margin-bottom:12px">
+    <input id="fag-name" class="fi fi-md" type="text" data-i18n-ph="ph_name" oninput="renderAgentsFiltered()">
+    <input id="fag-ip" class="fi fi-sm" type="text" data-i18n-ph="ph_ip" oninput="renderAgentsFiltered()">
+    <select id="fag-status" class="fi" onchange="renderAgentsFiltered()">
+      <option value="" data-i18n="filter_all_statuses">Visi statusai</option>
+      <option value="active" data-i18n="agent_status_active">Active</option>
+      <option value="disconnected" data-i18n="agent_status_disconnected">Disconnected</option>
+    </select>
+    <select id="fag-iso" class="fi" onchange="renderAgentsFiltered()">
+      <option value="" data-i18n="filter_all_iso">Visa izoliacija</option>
+      <option value="1" data-i18n="filter_isolated">Izoliuoti</option>
+      <option value="0" data-i18n="filter_free">Laisvi</option>
+    </select>
+    <button class="fi-clr" onclick="clearAgentsFilters()" data-i18n="btn_clear_filters">✕ Išvalyti</button>
+    <span id="agents-count" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+  </div>
+
+  <!-- Isolation stats bar -->
+  <div id="agents-iso-bar" style="display:none;background:var(--bg2);border:1px solid var(--red);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <span style="color:var(--red);font-size:18px">🔒</span>
+    <span id="agents-iso-count" style="color:var(--red);font-weight:600"></span>
+    <span style="color:var(--muted)" data-i18n="lbl_agents_isolated_info">izoliuotas(-i). Patikrinkite prieš atblokavimą.</span>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th data-i18n="th_agent">Agentas</th>
+        <th>ID</th>
+        <th>IP</th>
+        <th>OS</th>
+        <th data-i18n="th_status">Statusas</th>
+        <th data-i18n="lbl_isolation">Izoliacija</th>
+        <th data-i18n="th_action">Veiksmai</th>
+      </tr></thead>
+      <tbody id="agents-body"></tbody>
+    </table>
+  </div>
+  <div id="agents-empty" class="empty" style="display:none" data-i18n="no_data">Nėra agentų</div>
+  <div id="agents-loading" style="color:var(--muted);text-align:center;padding:32px">⏳ Kraunama...</div>
+</div>
+
+<!-- ── LLM PATARĖJAS ── -->
+<div id="page-llm-advisor" style="display:none;flex-direction:column;flex:1;min-height:0;">
+  <div class="topbar">
+    <div><h1 data-i18n="nav_llm_advisor">LLM Patarėjas</h1>
+         <div class="sub" data-i18n="llm_advisor_sub">Klausk apie agentus, incidentus, alertus (Wazuh)</div></div>
+    <button onclick="clearAdvisorChat()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer" data-i18n="btn_clear_chat">Išvalyti</button>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="advisor-msgs"></div>
+    <div class="chat-input-row">
+      <textarea id="advisor-input" data-i18n-ph="chat_placeholder" placeholder="Klausk apie agentus, incidentus..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdvisor();}"></textarea>
+      <button class="chat-send-btn" id="advisor-send-btn" onclick="sendAdvisor()" data-i18n="btn_send">Siųsti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LLM FORENZIKAI ── -->
+<div id="page-llm-forensics" style="display:none;flex-direction:column;flex:1;min-height:0;">
+  <div class="topbar">
+    <div><h1 data-i18n="nav_llm_forensics">LLM Forenzikai</h1>
+         <div class="sub" data-i18n="llm_forensics_sub">Forensinė analizė per Velociraptor artifacts</div></div>
+    <button onclick="clearForensicsChat()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer" data-i18n="btn_clear_chat">Išvalyti</button>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="forensics-msgs"></div>
+    <div id="forensics-agent-bar" style="display:none;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border-radius:6px;margin-bottom:6px;font-size:12px;">
+      <span style="color:var(--muted)">🖥</span>
+      <span id="forensics-agent-label" style="color:var(--accent);font-weight:600"></span>
+      <button onclick="clearForensicsAgent()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1" title="Išvalyti agentą">✕</button>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="forensics-input" data-i18n-ph="chat_placeholder" placeholder="Klausk apie procesus, naršyklę, failus..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendForensics();}"></textarea>
+      <button class="chat-send-btn" id="forensics-send-btn" onclick="sendForensics()" data-i18n="btn_send">Siųsti</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Detail overlay -->
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+  <div class="detail">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 id="d-title">Detail</h3>
+      <button class="close-btn" onclick="closeOverlayDirect()" data-i18n="btn_close">✕ Uždaryti</button>
+    </div>
+    <div id="d-body"></div>
+  </div>
+</div>
+
+<!-- ── Deploy Agent Modal ──────────────────────────────────────────────────── -->
+<div id="deploy-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:680px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-size:15px">➕ <span data-i18n="btn_add_agent">Prijungti agentą</span></h3>
+      <button onclick="closeDeployModal()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- Pagrindiniai tabai: Wazuh / Velociraptor -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button id="main-tab-wazuh" onclick="setMainTab('wazuh')"
+        style="flex:1;padding:10px;border-radius:6px;font-family:var(--font);font-size:13px;cursor:pointer;border:2px solid var(--accent);background:var(--accent);color:#fff;font-weight:600">
+        🛡 Wazuh
+      </button>
+      <button id="main-tab-velo" onclick="setMainTab('velo')"
+        style="flex:1;padding:10px;border-radius:6px;font-family:var(--font);font-size:13px;cursor:pointer;border:2px solid var(--border);background:var(--bg3);color:var(--muted);font-weight:600">
+        🦅 Velociraptor
+      </button>
+    </div>
+
+    <!-- Wazuh OS sub-tabai -->
+    <div id="wazuh-os-selector" style="display:flex;gap:6px;margin-bottom:14px">
+      <button id="wazuh-tab-win" onclick="setWazuhOS('windows')"
+        style="flex:1;padding:7px;border-radius:6px;font-family:var(--font);font-size:11px;cursor:pointer;border:2px solid var(--accent);background:var(--accent);color:#fff">
+        🪟 Windows
+      </button>
+      <button id="wazuh-tab-deb" onclick="setWazuhOS('linux')"
+        style="flex:1;padding:7px;border-radius:6px;font-family:var(--font);font-size:11px;cursor:pointer;border:2px solid var(--border);background:var(--bg3);color:var(--muted)">
+        🐧 Linux (DEB)
+      </button>
+      <button id="wazuh-tab-rpm" onclick="setWazuhOS('rpm')"
+        style="flex:1;padding:7px;border-radius:6px;font-family:var(--font);font-size:11px;cursor:pointer;border:2px solid var(--border);background:var(--bg3);color:var(--muted)">
+        🐧 Linux (RPM)
+      </button>
+    </div>
+
+    <!-- Velociraptor OS sub-tabai -->
+    <div id="velo-os-selector" style="display:none;gap:6px;margin-bottom:14px">
+      <button id="velo-tab-win" onclick="setVeloOS('win')"
+        style="flex:1;padding:7px;border-radius:6px;font-family:var(--font);font-size:11px;cursor:pointer;border:2px solid var(--accent);background:var(--accent);color:#fff">
+        🪟 Windows
+      </button>
+      <button id="velo-tab-deb" onclick="setVeloOS('deb')"
+        style="flex:1;padding:7px;border-radius:6px;font-family:var(--font);font-size:11px;cursor:pointer;border:2px solid var(--border);background:var(--bg3);color:var(--muted)">
+        🐧 Linux (DEB)
+      </button>
+      <button id="velo-tab-rpm" onclick="setVeloOS('rpm')"
+        style="flex:1;padding:7px;border-radius:6px;font-family:var(--font);font-size:11px;cursor:pointer;border:2px solid var(--border);background:var(--bg3);color:var(--muted)">
+        🐧 Linux (RPM)
+      </button>
+    </div>
+
+    <!-- Agento pavadinimas -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px" data-i18n="lbl_agent_name">AGENTO PAVADINIMAS (nebūtina)</label>
+      <input id="deploy-agent-name" type="text" placeholder="pvz. WORKSTATION-01"
+        oninput="updateDeployScript()"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px">
+    </div>
+
+    <!-- Sugeneruotas skriptas -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px" data-i18n="lbl_deploy_script">DEPLOYMENT SKRIPTAS</label>
+      <div style="position:relative">
+        <pre id="deploy-script"
+          style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:0;color:var(--green)"></pre>
+        <button onclick="copyDeployScript()"
+          style="position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:var(--font);font-size:11px;padding:3px 10px;cursor:pointer"
+          id="deploy-copy-btn" data-i18n="btn_copy">📋 Kopijuoti</button>
+      </div>
+    </div>
+
+    <!-- Instrukcija -->
+    <div id="deploy-instructions" style="background:var(--bg3);border-radius:6px;padding:12px;font-size:11px;color:var(--muted);line-height:1.8"></div>
+  </div>
+</div>
+
+<script>
+const ORG = '{{ org }}';
+document.getElementById('org-name').textContent = ORG;
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+function showPage(name,el){
+  document.querySelectorAll('[id^=page-]').forEach(p=>p.style.display='none');
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  const chatPages = ['llm-advisor','llm-forensics'];
+  const isChat = chatPages.includes(name);
+  document.getElementById('page-'+name).style.display = isChat ? 'flex' : 'block';
+  if(el)el.classList.add('active');
+  document.querySelector('main').classList.toggle('chat-page', isChat);
+  if(name==='overview')refreshAll();
+  if(name==='candidates')loadCands();
+  if(name==='rules')loadRules('ready');
+  if(name==='analyses')loadAnalyses();
+  if(name==='llm')loadLLMStatus();
+  // recs page removed
+  if(name==='export')loadExportPreview();
+  if(name==='portal-users')loadPortalUsers();
+  if(name==='candidates')loadRebootStatus();
+  if(name==='correlations')loadCorr('open');
+  if(name==='agents')loadAgents();
+  if(name==='blocked')loadBlockedIPs();
+  if(name==='admins')loadAdmins();
+  if(name==='playbooks')loadPlaybooks();
+  if(name==='license')setTimeout(loadLicense, 50);
+  if(name==='llm-advisor'||name==='llm-forensics') applyTranslations();
+}
+
+// ── Overview ────────────────────────────────────────────────────────────────
+async function refreshAll(){
+  try{
+    const d=await fetch('/api/stats').then(r=>r.json());
+    document.getElementById('s-total').textContent=d.total_alerts.toLocaleString();
+    document.getElementById('s-24h').textContent='24h: '+d.alerts_24h.toLocaleString();
+    document.getElementById('s-pending').textContent=d.pending;
+
+    const score=d.health_score??0;
+    const trend={'improving':'↑','stable':'→','degrading':'↓'}[d.health_trend]||'→';
+    const scoreColor=score>=70?'var(--green)':score>=40?'var(--amber)':'var(--red)';
+    document.getElementById('s-health').textContent=score+'/100 '+trend;
+    document.getElementById('s-health').style.color=scoreColor;
+    const bar=document.getElementById('s-health-bar');
+    bar.style.width=score+'%';
+    bar.style.background=scoreColor;
+
+    const llmEl=document.getElementById('s-llm');
+    if(d.llm_enabled){llmEl.textContent='✅ '+t('stat_llm_active');llmEl.style.color='var(--green)';}
+    else{llmEl.textContent='⏸ '+t('no_data');llmEl.style.color='var(--muted)';}
+    document.getElementById('s-llm-sub').textContent=d.vacation_mode?t('btn_vacation_on').replace('🏖 ',''):t('stat_llm_analyzed',{n:d.llm_24h});
+
+    const ul=document.getElementById('top-rules-list');
+    ul.innerHTML=d.top_rules.map(r=>`<li><span class="rid">${r.rule_id}</span><span class="rdesc" style="flex:1">${r.rule_desc}</span><span class="rcnt">${r.cnt}</span></li>`).join('')||`<li><span style="color:var(--muted)">${t('no_data')}</span></li>`;
+
+    // License agent limit banner
+    const lic=d.license||{};
+    const banner=document.getElementById('license-limit-banner');
+    if(lic.agent_limited){
+      document.getElementById('license-limit-text').textContent=
+        t('lbl_agent_limit_banner').replace('{max}',lic.max_agents).replace('{total}',lic.total_agents);
+      banner.style.display='flex';
+    } else {
+      banner.style.display='none';
+    }
+
+    loadTimeline('tl-overview',null);
+    loadTopCands();
+    document.getElementById('last-refresh').textContent=t('btn_refresh')+' '+new Date().toLocaleTimeString();
+  }catch(e){console.error(e);}
+}
+
+async function loadTimeline(elId,fp){
+  const url=fp?`/api/timeline?fingerprint=${fp}&hours=72`:'/api/timeline?hours=72';
+  try{
+    const data=await fetch(url).then(r=>r.json());
+    const el=document.getElementById(elId);
+    if(!el||!data.length)return;
+    const max=Math.max(...data.map(d=>d.cnt),1);
+    el.innerHTML=data.map(d=>`<div class="tl-bar" style="height:${Math.max(2,Math.round(d.cnt/max*44))}px" title="${d.hour}: ${d.cnt}"></div>`).join('');
+  }catch(e){}
+}
+
+async function loadTopCands(){
+  const d=await fetch('/api/candidates?status=pending&min_score=20&limit=8').then(r=>r.json());
+  renderCandRows(document.getElementById('top-cands-body'),d.items);
+}
+
+// ── Candidates ──────────────────────────────────────────────────────────────
+let _candsAll = [];
+let _candsSort = {col:'noise_score', dir:-1};
+
+async function loadCands(){
+  const status = document.getElementById('f-status').value;
+  const score  = document.getElementById('f-score').value;
+  const d = await fetch(`/api/candidates?status=${status}&min_score=${score}&limit=500`).then(r=>r.json());
+  _candsAll = d.items || [];
+  renderCandsFiltered();
+}
+
+function renderCandsFiltered(){
+  const agent = (document.getElementById('f-agent')?.value||'').toLowerCase();
+  const rule  = (document.getElementById('f-rule')?.value||'').toLowerCase();
+  const desc  = (document.getElementById('f-desc')?.value||'').toLowerCase();
+  const lvMin = parseInt(document.getElementById('f-level')?.value||'0')||0;
+
+  let items = _candsAll.filter(c=>{
+    if(agent && !(c.agent_name||'').toLowerCase().includes(agent)) return false;
+    if(rule  && !(String(c.rule_id||'')).toLowerCase().includes(rule)) return false;
+    if(desc  && !(c.rule_desc||'').toLowerCase().includes(desc)) return false;
+    if(lvMin && (c.rule_level||0) < lvMin) return false;
+    return true;
+  });
+
+  // Rūšiavimas
+  const {col, dir} = _candsSort;
+  items.sort((a,b)=>{
+    const av = a[col]??0, bv = b[col]??0;
+    return typeof av==='string' ? av.localeCompare(bv)*dir : (av-bv)*dir;
+  });
+
+  const countEl = document.getElementById('cands-count');
+  if(countEl) countEl.textContent = items.length + ' / ' + _candsAll.length + ' ' + t('lbl_records');
+  renderCandRows(document.getElementById('cands-body'), items);
+  document.getElementById('cands-empty').style.display = items.length?'none':'block';
+}
+
+function sortCands(col){
+  if(_candsSort.col===col) _candsSort.dir *= -1;
+  else _candsSort = {col, dir:-1};
+  renderCandsFiltered();
+}
+
+function clearCandsFilters(){
+  ['f-agent','f-rule','f-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const lv=document.getElementById('f-level'); if(lv) lv.value='';
+  renderCandsFiltered();
+}
+
+
+function renderCandRows(tbody,items){
+  if(!items.length){tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px">${t('no_data')}</td></tr>`;return;}
+  tbody.innerHTML=items.map(c=>{
+    const lv=c.rule_level||0;
+    const lvCol=lv>=12?'var(--red)':lv>=7?'var(--amber)':'var(--muted)';
+    const desc=(c.rule_desc||'');
+    const descShort=desc.length>55?desc.slice(0,55)+'…':desc||'—';
+    return `<tr onclick="openCandDetail('${c.fingerprint}')">
+    <td>${scoreBadge(c.noise_score)}</td>
+    <td style="color:var(--accent);white-space:nowrap">${c.rule_id}</td>
+    <td style="font-weight:600;color:${lvCol}">${lv||'?'}</td>
+    <td style="color:var(--muted);font-size:11px;max-width:200px" title="${desc.replace(/"/g,'&quot;')}">${descShort}</td>
+    <td style="color:var(--accent);font-size:11px;word-break:break-all">${c.src_proc_name||'—'}</td>
+    <td style="color:var(--muted);font-size:11px;word-break:break-all">${
+      c.dst_proc_name && c.dst_proc_name.match(/^[\d.]+$/)
+        ? `<span class="ip-tip" data-ip="${c.dst_proc_name}" data-tip="Užveskite pelę..." onmouseenter="ipInfo(this)">${c.dst_proc_name}</span>`
+        : (c.dst_proc_name||'—')
+    }</td>
+    <td style="color:var(--muted)">${c.agent_name||c.agent_id}</td>
+    <td style="color:var(--amber)">${c.hourly_rate}</td>
+    <td>${(c.occurrence_count||0).toLocaleString()}</td>
+    <td><span class="pill ${c.status}">${c.status}</span></td>
+  </tr>`;}).join('');
+}
+
+function scoreBadge(s){return `<span class="score ${s>=40?'hi':s>=25?'md':'lo'}">${s}</span>`;}
+
+async function openCandDetail(fp){
+  document.getElementById('d-title').textContent=t('loading');
+  document.getElementById('d-body').innerHTML='';
+  document.getElementById('overlay').classList.add('open');
+  const d=await fetch(`/api/candidates/${fp}`).then(r=>r.json());
+  const c=d;const tid='tl-fp-'+fp.slice(0,6);
+  const ana=null;
+  document.getElementById('d-title').textContent=`Rule ${c.rule_id} · ${c.agent_name||c.agent_id}`;
+  document.getElementById('d-body').innerHTML=`
+    <div class="kv">
+      <div class="kk">Fingerprint</div><div class="kv-val" style="font-size:10px">${c.fingerprint}</div>
+      <div class="kk">Rule ID</div><div class="kv-val" style="color:var(--accent)">${c.rule_id}</div>
+      <div class="kk">Level</div><div class="kv-val"><span style="color:${c.rule_level>=12?'var(--red)':c.rule_level>=7?'var(--amber)':'var(--muted)'};font-weight:600">${c.rule_level||'?'}</span></div>
+      <div class="kk">${t('th_desc')}</div><div class="kv-val">${c.rule_desc}</div>
+      <div class="kk">${t('th_agent')}</div><div class="kv-val">${c.agent_name} (${c.agent_id})</div>
+      <div class="kk">Location</div><div class="kv-val">${c.location||'—'}</div>
+      ${c.src_proc_name?`<div class="kk">${t('th_source')}</div><div class="kv-val" style="color:var(--accent)">${c.src_proc_name}</div>`:''}
+      ${c.dst_proc_name?`<div class="kk">${t('th_target')}</div><div class="kv-val" style="color:var(--amber)">${c.dst_proc_name}</div>`:''}
+      ${c.mitre_id?`<div class="kk">MITRE</div><div class="kv-val" style="color:var(--red)">${c.mitre_id}</div>`:''}
+      ${c.event_id?`<div class="kk">${t('lbl_event_id')}</div><div class="kv-val">${c.event_id}</div>`:''}
+      <div class="kk">${t('lbl_noise_score')}</div><div class="kv-val">${scoreBadge(c.noise_score)}</div>
+      <div class="kk">${t('lbl_rate')}</div><div class="kv-val" style="color:var(--amber)">${c.hourly_rate}</div>
+      <div class="kk">${t('lbl_quantity')}</div><div class="kv-val">${c.occurrence_count.toLocaleString()}</div>
+      <div class="kk">${t('lbl_status2')}</div><div class="kv-val"><span class="pill ${c.status}">${c.status}</span></div>
+    </div>
+    <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${t('lbl_volume')}</div><div class="tl-bars" id="${tid}"></div></div>
+    <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${t('lbl_log_samples')}</div>
+      ${(c.log_samples||[]).slice(0,4).map(s=>`<div class="log-s">${esc(s||t('no_samples'))}</div>`).join('')||`<div class="log-s" style="color:var(--muted)">${t('no_samples')}</div>`}
+    </div>
+    ${c.suggested_xml?`<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${t('lbl_suppress_xml')}</div><div class="xml-b">${esc(c.suggested_xml)}</div></div>`:`<div style="font-size:12px;color:var(--muted)">${t('xml_failed')}</div>`}
+    ${c.status==='pending'?`
+    <div><textarea id="rev-notes" placeholder="${t('lbl_notes')}">${c.notes||''}</textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-green" onclick="review('${fp}','approve')">${t('btn_approve')}</button>
+      <button class="btn btn-muted" onclick="review('${fp}','dismiss')">${t('btn_dismiss')}</button>
+    </div>`:`<div style="font-size:12px;color:var(--muted)">${t('lbl_reviewed')} <span class="pill ${c.status}">${c.status}</span>${c.notes?' · '+c.notes:''}</div>`}
+  `;
+  loadTimeline(tid,fp);
+}
+
+
+async function review(fp,action){
+  const notes=(document.getElementById('rev-notes')||{}).value||'';
+  const resp=await fetch(`/api/candidates/${fp}/review`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,notes})});
+  const d=await resp.json();
+  if(!d.ok){
+    showToast('❌ '+(d.error||t('err_generic')),'red');
+    return; // kandidatas lieka pending — neuždarom, neperkraunam
+  }
+  closeOverlayDirect();
+  loadCands();
+  refreshAll();
+  if(action==='approve'){
+    await loadRebootStatus();
+    if(d.wazuh_ok===true){
+      showToast(t('toast_rule_pushed'),'green');
+    } else if(d.wazuh_ok===false){
+      showToast(t('toast_wazuh_err')+' '+(d.wazuh_msg||t('toast_unknown')),'amber');
+    }
+  }
+}
+
+// ── Rules ───────────────────────────────────────────────────────────────────
+async function loadRules(status,tabEl){
+  if(tabEl){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tabEl.classList.add('active');}
+  const d=await fetch(`/api/rules?status=${status}`).then(r=>r.json());
+  document.getElementById('rules-body').innerHTML=d.items.map(r=>`<tr onclick="showRuleXML(${r.id})">
+    <td style="color:var(--accent)">${r.wazuh_rule_id||'—'}</td>
+    <td>${scoreBadge(r.noise_score||0)}</td>
+    <td>${r.rule_id}</td>
+    <td>${r.agent_name||'—'}</td>
+    <td><div class="rdesc">${r.rule_desc}</div></td>
+    <td><span class="pill ${r.status}">${r.status}</span></td>
+    <td style="color:var(--muted)">${fmtDate(r.created_at)}</td>
+  </tr>`).join('');
+  document.getElementById('rules-empty').style.display=d.items.length?'none':'block';
+}
+
+async function showRuleXML(id){
+  const txt=await fetch(`/api/rules/${id}/xml`).then(r=>r.text());
+  document.getElementById('d-title').textContent='Wazuh Rule XML';
+  document.getElementById('d-body').innerHTML=`<div class="xml-b">${esc(txt)}</div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ── LLM Analyses ────────────────────────────────────────────────────────────
+async function openAnalysisDetail(a){
+  const lvColor=a.rule_level>=12?'var(--red)':a.rule_level>=7?'var(--amber)':'var(--muted)';
+  const verdictColor=a.verdict==='true_positive'?'var(--red)':a.verdict==='false_positive'?'var(--amber)':'var(--accent)';
+  document.getElementById('d-title').textContent=`${a.verdict.toUpperCase()} · Rule ${a.rule_id} · ${a.agent_name||'—'}`;
+  document.getElementById('d-body').innerHTML=`
+
+    <!-- VERDICT BANNER -->
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <div>
+        <span class="pill ${a.verdict}" style="font-size:13px;padding:5px 12px">${a.verdict}</span>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:22px;font-weight:700;color:${verdictColor}">${a.confidence}%</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase">${t('lbl_confidence_lbl')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted)">${t('lbl_stage')}</div>
+        <div style="font-size:18px;font-weight:600">${a.stage}</div>
+      </div>
+    </div>
+
+    <!-- ALERT INFO -->
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${t('lbl_alert_info')}</div>
+      <div class="kv">
+        <div class="kk">Rule ID</div><div class="kv-val" style="color:var(--accent);font-weight:600">${a.rule_id}</div>
+        <div class="kk">Level</div><div class="kv-val" style="color:${lvColor};font-weight:600">${a.rule_level}</div>
+        <div class="kk">${t('th_desc')}</div><div class="kv-val">${esc(a.rule_desc||'—')}</div>
+        <div class="kk">${t('th_agent')}</div><div class="kv-val">${esc(a.agent_name||'—')}${a.agent_ip?` <span style="color:var(--muted);font-size:10px">(${esc(a.agent_ip)})</span>`:''}</div>
+        <div class="kk">${t('lbl_location')}</div><div class="kv-val" style="color:var(--muted)">${esc(a.location||'—')}</div>
+        <div class="kk">${t('lbl_alert_time')}</div><div class="kv-val" style="color:var(--muted)">${(a.alert_ts||'').slice(0,19)||'—'}</div>
+        <div class="kk">${t('lbl_collected')}</div><div class="kv-val" style="color:var(--muted)">${(a.analyzed_at||'').slice(0,19)||'—'}</div>
+        <div class="kk">Fingerprint</div><div class="kv-val" style="color:var(--muted);font-size:10px;font-family:monospace">${esc(a.fingerprint||'—')}</div>
+      </div>
+    </div>
+
+    <!-- PROCESS / EVENT -->
+    ${(a.event_id||a.image_path||a.parent_image_path||a.cmd_line||a.proc_user||a.proc_sha256)?`
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${t('lbl_process_event')}</div>
+      <div class="kv">
+        ${a.event_id?`<div class="kk">Event ID</div><div class="kv-val" style="color:var(--accent)">${a.event_id}</div>`:''}
+        ${a.image_path?`<div class="kk">Process</div><div class="kv-val" style="font-family:monospace;font-size:10px;word-break:break-all">${esc(a.image_path)}</div>`:
+          a.dst_proc_name?`<div class="kk">Process</div><div class="kv-val" style="font-family:monospace;font-size:11px">${esc(a.dst_proc_name)}</div>`:''}
+        ${a.parent_image_path?`<div class="kk">Parent</div><div class="kv-val" style="font-family:monospace;font-size:10px;word-break:break-all">${esc(a.parent_image_path)}</div>`:
+          a.src_proc_name?`<div class="kk">Parent</div><div class="kv-val" style="font-family:monospace;font-size:11px">${esc(a.src_proc_name)}</div>`:''}
+        ${a.cmd_line?`<div class="kk">Cmd</div><div class="kv-val" style="font-family:monospace;font-size:10px;word-break:break-all;color:var(--accent)">${esc(a.cmd_line)}</div>`:''}
+        ${a.proc_user?`<div class="kk">User</div><div class="kv-val" style="font-family:monospace;font-size:11px">${esc(a.proc_user)}</div>`:''}
+        ${a.proc_sha256?`<div class="kk">SHA256</div><div class="kv-val" style="font-family:monospace;font-size:10px;word-break:break-all"><a href="https://www.virustotal.com/gui/search/${encodeURIComponent(a.proc_sha256)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none" title="Check on VirusTotal">${esc(a.proc_sha256)}</a></div>`:''}
+        ${a.parent_sha256?`<div class="kk">Parent SHA256</div><div class="kv-val" style="font-family:monospace;font-size:10px;word-break:break-all"><a href="https://www.virustotal.com/gui/search/${encodeURIComponent(a.parent_sha256)}" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:none" title="Check on VirusTotal">${esc(a.parent_sha256)}</a></div>`:''}
+      </div>
+    </div>`:''}
+
+    <!-- MITRE -->
+    ${(a.mitre_id||a.mitre_tactic)?`
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">MITRE ATT&CK</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${a.mitre_id?`<span style="background:rgba(100,120,200,.15);border:1px solid rgba(100,120,200,.3);border-radius:4px;padding:3px 8px;font-size:11px;color:#8898d4">${esc(a.mitre_id)}</span>`:''}
+        ${a.mitre_tactic?`<span style="background:rgba(100,120,200,.15);border:1px solid rgba(100,120,200,.3);border-radius:4px;padding:3px 8px;font-size:11px;color:#8898d4">${esc(a.mitre_tactic)}</span>`:''}
+      </div>
+    </div>`:''}
+
+    <!-- LLM REASONING -->
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${t('lbl_llm_reasoning')}</div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap">${esc(a.reasoning||'—')}</div>
+    </div>
+
+    <!-- RECOMMENDED ACTION -->
+    ${a.recommended_action?`
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${t('lbl_recommended_action')}</div>
+      <div style="background:rgba(99,190,123,.08);border:1px solid rgba(99,190,123,.2);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;color:var(--green)">${esc(a.recommended_action)}</div>
+    </div>`:''}
+
+    <!-- SUGGESTED XML -->
+    ${a.suggested_xml?`
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${t('lbl_suggest_xml')}</div>
+      <div class="xml-b" style="max-height:160px;overflow-y:auto">${esc(a.suggested_xml)}</div>
+    </div>`:''}
+
+    <!-- FULL LOG -->
+    ${a.full_log?`
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Raw log</div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:10px;font-family:monospace;white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;color:var(--muted);line-height:1.5">${esc(a.full_log)}</div>
+    </div>`:''}
+
+    <!-- LLM META -->
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${t('lbl_llm_meta')}</div>
+      <div class="kv">
+        <div class="kk">${t('lbl_model_kv')}</div><div class="kv-val" style="color:var(--muted)">${esc(a.model||'—')}</div>
+        <div class="kk">${t('lbl_tokens')}</div><div class="kv-val">${a.tokens_used!=null?a.tokens_used.toLocaleString():'—'}</div>
+        <div class="kk">${t('lbl_cost_kv')}</div><div class="kv-val">${a.cost_usd!=null?'$'+parseFloat(a.cost_usd).toFixed(6):'—'}</div>
+        ${a.wazuh_id?(()=>{ const d=(a.alert_ts||'').slice(0,10).replace(/-/g,'.'); const idx=d?`wazuh-alerts-4.x-${d}`:'wazuh-alerts-*'; return `<div class="kk">Wazuh</div><div class="kv-val" style="font-family:monospace;font-size:10px"><a href="${WAZUH_DASHBOARD_URL}:5601/app/discover#/doc/wazuh-alerts-*/${idx}?id=${encodeURIComponent(a.wazuh_id)}" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline dotted" title="Open in Wazuh Dashboard">Open ↗ ${esc(a.wazuh_id.slice(0,12))}…</a></div>`; })():''}
+      </div>
+    </div>
+
+    <!-- OVERRIDE -->
+    ${a.overridden_by?`
+    <div style="background:rgba(255,180,0,.07);border:1px solid rgba(255,180,0,.2);border-radius:8px;padding:12px">
+      <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${t('lbl_overridden')}</div>
+      <div class="kv">
+        <div class="kk">${t('lbl_changed_by')}</div><div class="kv-val">${esc(a.overridden_by)}</div>
+        <div class="kk">${t('lbl_time_kv')}</div><div class="kv-val" style="color:var(--muted)">${(a.overridden_at||'').slice(0,19)}</div>
+        ${a.override_reason?`<div class="kk">${t('lbl_reason')}</div><div class="kv-val">${esc(a.override_reason)}</div>`:''}
+      </div>
+    </div>`:''}
+  `;
+  document.getElementById('overlay').classList.add('open');
+}
+
+let _analysesCache=[];
+const _threatEmoji={malware:'🦠',privilege_escalation:'⬆️',lateral_movement:'↔️',
+  exfiltration:'📤',brute_force:'🔨',reconnaissance:'🔭',noise:'🔇',other:'❓'};
+async function loadAnalyses(){
+  const verdict  = document.getElementById('f-verdict').value;
+  const llmOnly  = document.getElementById('f-llm-only')?.checked ? '1' : '0';
+  const d = await fetch(`/api/analyses?verdict=${verdict}&llm_only=${llmOnly}&limit=200`).then(r=>r.json());
+  _analysesCache = d.items||[];
+  renderAnalysesFiltered();
+}
+function renderAnalysesFiltered(){
+  const agF=(document.getElementById('fa-agent')?.value||'').toLowerCase();
+  const ruF=(document.getElementById('fa-rule')?.value||'').toLowerCase();
+  const dsF=(document.getElementById('fa-desc')?.value||'').toLowerCase();
+  const items=_analysesCache.filter(a=>
+    (!agF||(a.agent_name||'').toLowerCase().includes(agF))&&
+    (!ruF||(a.rule_id||'').toString().toLowerCase().includes(ruF))&&
+    (!dsF||(a.rule_desc||'').toLowerCase().includes(dsF))
+  );
+  const countEl=document.getElementById('analyses-count');
+  if(countEl)countEl.textContent=items.length+(items.length<_analysesCache.length?' / '+_analysesCache.length:'')+' '+t('lbl_records');
+  document.getElementById('analyses-body').innerHTML=items.map((a,i)=>{
+    const ts = a.analyzed_at
+      ? new Date(a.analyzed_at).toLocaleString('lt-LT',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    const desc = (a.rule_desc||'').length>55 ? (a.rule_desc||'').slice(0,55)+'…' : (a.rule_desc||'—');
+    const ttype = a.threat_type||'';
+    const temoji = _threatEmoji[ttype]||'';
+    const modelBadge = (a.model && a.model!=='rule-based')
+      ? `<span style="font-size:9px;color:var(--green);margin-left:4px">AI</span>` : '';
+    const idx=_analysesCache.indexOf(a);
+    return `<tr style="cursor:pointer" onclick="openAnalysisDetail(_analysesCache[${idx}])">
+      <td><span class="pill ${a.verdict}">${a.verdict}</span>${modelBadge}</td>
+      <td>${a.confidence}%</td>
+      <td style="font-size:12px" title="${ttype}">${temoji} ${ttype||'—'}</td>
+      <td style="color:var(--accent)">${a.rule_id||'—'}</td>
+      <td style="color:var(--muted);font-size:11px;max-width:240px" title="${(a.rule_desc||'').replace(/"/g,'&quot;')}">${desc}</td>
+      <td>${a.agent_name||'—'}</td>
+      <td style="color:${a.rule_level>=12?'var(--red)':a.rule_level>=9?'var(--amber)':'var(--muted)'}">${a.rule_level}</td>
+      <td style="color:var(--muted);white-space:nowrap">${ts}</td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">${t('no_data')}</td></tr>`;
+}
+function clearAnalysesFilters(){
+  ['fa-agent','fa-rule','fa-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderAnalysesFiltered();
+}
+
+// ── LLM Agent ───────────────────────────────────────────────────────────────
+async function loadLLMStatus(){
+  const d=await fetch('/api/llm/status').then(r=>r.json());
+  const cfg=d.config||{};
+  const dot=document.getElementById('llm-dot');
+  const tog=document.getElementById('llm-toggle');
+  dot.className='llm-dot '+(cfg.enabled?'on':'off');
+  tog.checked=!!cfg.enabled;
+  document.getElementById('llm-status-text').textContent=cfg.enabled?t('lbl_agent_active'):t('lbl_agent_inactive');
+  document.getElementById('llm-status-sub').textContent=cfg.enabled?(cfg.vacation_mode?t('lbl_vacation_active'):t('lbl_model')+' '+cfg.model):t('lbl_click_toggle');
+
+  const r=d.readiness||{};const s=d.stats||{};
+  document.getElementById('r-total').textContent=(r.total_alerts||0).toLocaleString();
+  document.getElementById('r-tp').textContent=s.verdicts?.true_positive||0;
+  document.getElementById('r-fp').textContent=s.verdicts?.false_positive||0;
+  document.getElementById('r-cost').textContent='$'+(s.est_cost_usd||0).toFixed(4);
+  document.getElementById('r-real-llm').textContent=(s.real_llm_count||0).toLocaleString();
+  const sup=s.suppression||{};
+  document.getElementById('r-suppressed').textContent=(sup.suppressed||0)+' / '+(sup.total||0);
+
+  // Show env-based LLM info
+  fetch('/api/llm/info').then(r=>r.json()).then(info=>{
+    document.getElementById('llm-api-url').textContent=info.api_url;
+    document.getElementById('llm-api-url').style.color=info.has_key?'var(--text)':'var(--amber)';
+    document.getElementById('llm-model-display').textContent=info.model;
+    const noteEl=document.getElementById('cfg-model-display-note');
+    if(noteEl && cfg.model && cfg.model!==info.model){
+      noteEl.textContent='(DB: '+cfg.model+')';
+    }
+  });
+  // cfg-model removed - now read from env
+  if(cfg.min_level)document.getElementById('cfg-level').value=cfg.min_level;
+  if(cfg.batch_size)document.getElementById('cfg-batch').value=cfg.batch_size;
+  if(cfg.auto_isolate_level){document.getElementById('cfg-isolate').value=cfg.auto_isolate_level;const vacDescEl=document.getElementById('vac-desc');if(vacDescEl)vacDescEl.textContent=t('lbl_vacation_desc',{n:cfg.auto_isolate_level});}
+  if(cfg.escalation_minutes)document.getElementById('cfg-escalation').value=cfg.escalation_minutes;
+  if(cfg.digest_interval_minutes)document.getElementById('cfg-digest').value=cfg.digest_interval_minutes;
+
+  const vacBtn=document.getElementById('vac-btn');
+  if(cfg.vacation_mode){vacBtn.textContent=t('btn_vacation_off');vacBtn.className='btn btn-muted';}
+  else{vacBtn.textContent=t('btn_vacation_on');vacBtn.className='btn btn-amber';}
+
+  document.getElementById('tg-alerts').checked      = cfg.tg_alerts_enabled !== false;
+  document.getElementById('tg-correlations').checked = cfg.tg_correlations_enabled !== false;
+  document.getElementById('tg-digest').checked       = cfg.tg_digest_enabled !== false;
+}
+
+async function toggleLLM(enabled){
+  await fetch('/api/llm/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled})});
+  loadLLMStatus();
+}
+
+async function saveLLMConfig(){
+  const body={
+    model:document.getElementById('llm-model-display').textContent,
+    min_level:parseInt(document.getElementById('cfg-level').value),
+    batch_size:parseInt(document.getElementById('cfg-batch').value),
+    auto_isolate_level:parseInt(document.getElementById('cfg-isolate').value),
+    escalation_minutes:parseInt(document.getElementById('cfg-escalation').value),
+    digest_interval_minutes:parseInt(document.getElementById('cfg-digest').value),
+  };
+  await fetch('/api/llm/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const el=document.getElementById('cfg-saved');
+  el.textContent=t('btn_save');el.style.color='var(--green)';
+  setTimeout(()=>el.textContent='',2000);
+  loadLLMStatus();
+}
+
+async function pingLLM(){
+  const btn=document.querySelector('[onclick="pingLLM()"]');
+  const res=document.getElementById('ping-result');
+  btn.disabled=true;btn.textContent='...';res.textContent='';
+  try{
+    const d=await fetch('/api/llm/ping').then(r=>r.json());
+    res.textContent=d.ok?'✅ '+d.message:'❌ '+d.message;
+    res.style.color=d.ok?'var(--green)':'var(--red)';
+  }catch(e){res.textContent='❌ '+t('err_generic');res.style.color='var(--red)';}
+  btn.disabled=false;btn.textContent=t('btn_ping');
+}
+
+async function saveTgConfig(){
+  await fetch('/api/llm/config',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    tg_alerts_enabled:       document.getElementById('tg-alerts').checked,
+    tg_correlations_enabled: document.getElementById('tg-correlations').checked,
+    tg_digest_enabled:       document.getElementById('tg-digest').checked,
+  })});
+}
+
+async function toggleVacation(){
+  const d=await fetch('/api/llm/status').then(r=>r.json());
+  const cfg=d.config||{};
+  if(!cfg.enabled){
+    const btn=document.getElementById('vac-btn');
+    const orig=btn.textContent;
+    btn.textContent=t('lbl_llm_disabled');
+    btn.style.color='var(--amber)';
+    setTimeout(()=>{btn.textContent=orig;btn.style.color='';},3000);
+    return;
+  }
+  const current=cfg.vacation_mode||false;
+  await fetch('/api/llm/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vacation_mode:!current})});
+  await loadLLMStatus();
+}
+
+// Recommendations page removed — functionality merged into LLM Analyses
+
+// ── Export ──────────────────────────────────────────────────────────────────
+async function loadExportPreview(){
+  const d=await fetch('/api/rules?status=ready').then(r=>r.json());
+  const el=document.getElementById('export-preview');
+  if(!d.items.length){el.innerHTML=`<div class="empty">${t('rules_empty')}</div>`;return;}
+  el.innerHTML=`<div style="color:var(--muted);margin-bottom:10px;font-size:11px">${d.items.length} ${t('tab_ready').toLowerCase()}</div>`
+    +d.items.slice(0,3).map(r=>`<div class="xml-b" style="margin-bottom:10px">${esc(r.wazuh_xml)}</div>`).join('')
+    +(d.items.length>3?`<div style="color:var(--muted);font-size:11px">... +${d.items.length-3}</div>`:'');
+}
+function exportXML(){window.location.href='/api/rules/export';}
+
+// ── Overlay ─────────────────────────────────────────────────────────────────
+function closeOverlay(e){if(e.target===document.getElementById('overlay'))closeOverlayDirect();}
+function closeOverlayDirect(){document.getElementById('overlay').classList.remove('open');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtDate(iso,fallback='—'){
+  if(!iso)return fallback;
+  const d=new Date(iso.endsWith('Z')||iso.includes('+')? iso : iso+'Z');
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ── Portal users ────────────────────────────────────────────────────────────
+let _usersCache=[];
+async function loadPortalUsers(){
+  const d=await fetch('/api/portal-users',{credentials:'include'}).then(r=>r.json());
+  _usersCache=d.items||[];
+  renderUsersFiltered();
+}
+function renderUsersFiltered(){
+  const emF=(document.getElementById('fu-email')?.value||'').toLowerCase();
+  const stF=document.getElementById('fu-status')?.value||'';
+  const items=_usersCache.filter(u=>
+    (!emF||(u.email||'').toLowerCase().includes(emF))&&
+    (stF===''||(stF==='active'?u.is_active:!u.is_active))
+  );
+  const countEl=document.getElementById('users-count');
+  if(countEl)countEl.textContent=items.length+(items.length<_usersCache.length?' / '+_usersCache.length:'')+' '+t('lbl_users_count');
+  const tbody=document.getElementById('portal-users-body');
+  tbody.innerHTML=items.map(u=>`<tr>
+    <td>${u.email}</td>
+    <td>${u.mfa_enabled?`<span class="pill approved">${t('mfa_on')}</span>`:`<span class="pill dismissed">${t('mfa_off')}</span>`}</td>
+    <td>${u.is_active?`<span class="pill approved">${t('lbl_active_f')}</span>`:`<span class="pill dismissed">${t('lbl_inactive_f')}</span>`}</td>
+    <td style="color:var(--muted)">${fmtDate(u.last_login,t('lbl_never'))}</td>
+    <td style="color:var(--muted)">${fmtDate(u.created_at)}</td>
+    <td><button class="btn btn-muted" style="padding:4px 10px;font-size:11px" onclick="openEditUser(${u.id},'${u.email}',${u.is_active})">&#9998; ${t('btn_edit').replace('✎ ','')}</button></td>
+  </tr>`).join('');
+  document.getElementById('portal-users-empty').style.display=items.length?'none':'block';
+}
+function clearUsersFilters(){
+  const el=document.getElementById('fu-email');if(el)el.value='';
+  document.getElementById('fu-status').value='';
+  renderUsersFiltered();
+}
+
+function openNewUser(){
+  document.getElementById('nu-email').value='';
+  document.getElementById('nu-pass').value='';
+  document.getElementById('nu-error').style.display='none';
+  document.getElementById('new-user-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('nu-email').focus(),50);
+}
+function closeNewUser(){document.getElementById('new-user-modal').style.display='none';}
+
+async function createUser(){
+  const email=document.getElementById('nu-email').value.trim();
+  const pass=document.getElementById('nu-pass').value;
+  const errEl=document.getElementById('nu-error');
+  errEl.style.display='none';
+  const r=await fetch('/api/portal-users',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,password:pass})});
+  const d=await r.json();
+  if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+  closeNewUser();loadPortalUsers();
+}
+
+function openEditUser(id,email,isActive){
+  document.getElementById('eu-id').value=id;
+  document.getElementById('eu-title').textContent=t('lbl_edit_prefix')+' '+email;
+  document.getElementById('eu-pass').value='';
+  document.getElementById('eu-active').checked=isActive;
+  document.getElementById('eu-error').style.display='none';
+  document.getElementById('edit-user-modal').style.display='flex';
+}
+function closeEditUser(){document.getElementById('edit-user-modal').style.display='none';}
+
+async function saveUser(){
+  const id=document.getElementById('eu-id').value;
+  const pass=document.getElementById('eu-pass').value;
+  const active=document.getElementById('eu-active').checked;
+  const errEl=document.getElementById('eu-error');
+  errEl.style.display='none';
+  const body={is_active:active};
+  if(pass)body.password=pass;
+  const r=await fetch('/api/portal-users/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+  closeEditUser();loadPortalUsers();
+}
+
+async function resetMFA(){
+  const id=document.getElementById('eu-id').value;
+  if(!confirm(t('confirm_reset_mfa')))return;
+  await fetch('/api/portal-users/'+id+'/reset-mfa',{method:'POST',credentials:'include'});
+  closeEditUser();loadPortalUsers();
+}
+
+// ── Admins ───────────────────────────────────────────────────────────────────
+let _adminsCache=[];
+async function loadAdmins(){
+  const d=await fetch('/api/admin-users',{credentials:'include'}).then(r=>r.json());
+  _adminsCache=d.items||[];
+  renderAdminsFiltered();
+}
+function renderAdminsFiltered(){
+  const nmF=(document.getElementById('fadm-name')?.value||'').toLowerCase();
+  const items=_adminsCache.filter(u=>!nmF||(u.username||'').toLowerCase().includes(nmF));
+  const countEl=document.getElementById('admins-count');
+  if(countEl)countEl.textContent=items.length+(items.length<_adminsCache.length?' / '+_adminsCache.length:'')+' '+t('lbl_users_count');
+  const tbody=document.getElementById('admins-body');
+  tbody.innerHTML=items.map(u=>`<tr>
+    <td style="font-weight:500">${esc(u.username)}${u.is_current?` <span style="font-size:10px;color:var(--accent)">(${t('lbl_you')})</span>`:''}</td>
+    <td>${u.mfa_enabled?`<span class="pill approved">${t('mfa_on')}</span>`:`<span class="pill dismissed">${t('mfa_off')}</span>`}</td>
+    <td style="color:var(--muted)">${fmtDate(u.last_login)}</td>
+    <td style="color:var(--muted)">${fmtDate(u.created_at)}</td>
+    <td><button class="btn btn-muted" style="padding:4px 10px;font-size:11px" onclick="openEditAdmin(${u.id},'${esc(u.username)}',${u.is_current})">&#9998; ${t('btn_edit').replace('✎ ','')}</button></td>
+  </tr>`).join('');
+  document.getElementById('admins-empty').style.display=items.length?'none':'block';
+}
+function clearAdminsFilters(){
+  const el=document.getElementById('fadm-name');if(el)el.value='';
+  renderAdminsFiltered();
+}
+
+function openNewAdmin(){
+  document.getElementById('na-user').value='';
+  document.getElementById('na-pass').value='';
+  document.getElementById('na-error').style.display='none';
+  document.getElementById('new-admin-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('na-user').focus(),50);
+}
+function closeNewAdmin(){document.getElementById('new-admin-modal').style.display='none';}
+
+async function createAdmin(){
+  const username=document.getElementById('na-user').value.trim();
+  const pass=document.getElementById('na-pass').value;
+  const errEl=document.getElementById('na-error');
+  errEl.style.display='none';
+  const r=await fetch('/api/admin-users',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({username,password:pass})});
+  const d=await r.json();
+  if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+  closeNewAdmin();loadAdmins();
+}
+
+let _editAdminIsCurrent=false;
+function openEditAdmin(id,username,isCurrent){
+  document.getElementById('ea-id').value=id;
+  document.getElementById('ea-title').textContent='Redaguoti: '+username;
+  document.getElementById('ea-pass').value='';
+  document.getElementById('ea-error').style.display='none';
+  document.getElementById('ea-delete-btn').style.display=isCurrent?'none':'';
+  _editAdminIsCurrent=isCurrent;
+  document.getElementById('edit-admin-modal').style.display='flex';
+}
+function closeEditAdmin(){document.getElementById('edit-admin-modal').style.display='none';}
+
+async function saveAdmin(){
+  const id=document.getElementById('ea-id').value;
+  const pass=document.getElementById('ea-pass').value;
+  const errEl=document.getElementById('ea-error');
+  errEl.style.display='none';
+  if(!pass){closeEditAdmin();return;}
+  const r=await fetch('/api/admin-users/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({password:pass})});
+  const d=await r.json();
+  if(d.error){errEl.textContent=d.error;errEl.style.display='block';return;}
+  closeEditAdmin();loadAdmins();
+}
+
+async function deleteAdmin(){
+  const id=document.getElementById('ea-id').value;
+  const title=document.getElementById('ea-title').textContent;
+  if(!confirm('Ištrinti '+title+'?'))return;
+  const r=await fetch('/api/admin-users/'+id,{method:'DELETE',credentials:'include'});
+  const d=await r.json();
+  if(d.error){document.getElementById('ea-error').textContent=d.error;document.getElementById('ea-error').style.display='block';return;}
+  closeEditAdmin();loadAdmins();
+}
+
+async function resetAdminMFA(){
+  const id=document.getElementById('ea-id').value;
+  if(!confirm('Reset MFA šiam administratoriui?'))return;
+  await fetch('/api/admin-users/'+id+'/reset-mfa',{method:'POST',credentials:'include'});
+  closeEditAdmin();loadAdmins();
+}
+
+// ── Blocked IPs ──────────────────────────────────────────────────────────────
+let _playbooksCache=[];
+async function loadPlaybooks(){
+  const d=await fetch('/api/playbooks',{credentials:'include'}).then(r=>r.json());
+  _playbooksCache=d.playbooks||[];
+  renderPlaybooksFiltered();
+}
+function renderPlaybooksFiltered(){
+  const sigF=(document.getElementById('fpb-sig')?.value||'').toLowerCase();
+  const dsF=(document.getElementById('fpb-desc')?.value||'').toLowerCase();
+  const enF=document.getElementById('fpb-enabled')?.value||'';
+  const isF=document.getElementById('fpb-isolate')?.value||'';
+  const items=_playbooksCache.filter(p=>
+    (!sigF||(p.trigger_type||'').toLowerCase().includes(sigF))&&
+    (!dsF||(p.description||'').toLowerCase().includes(dsF))&&
+    (enF===''||(enF==='1'?p.enabled:!p.enabled))&&
+    (isF===''||(isF==='1'?p.auto_isolate:!p.auto_isolate))
+  );
+  const countEl=document.getElementById('playbooks-count');
+  if(countEl)countEl.textContent=items.length+(items.length<_playbooksCache.length?' / '+_playbooksCache.length:'')+' '+t('lbl_records');
+  const tbody=document.getElementById('playbooks-body');
+  const empty=document.getElementById('playbooks-empty');
+  if(!items.length){tbody.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  tbody.innerHTML=items.map(p=>`<tr>
+    <td><span style="color:${p.enabled?'var(--green)':'var(--muted)'}">●</span></td>
+    <td><code style="font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:4px">${p.trigger_type}</code></td>
+    <td data-pb-trigger="${p.trigger_type}" style="color:var(--muted);font-size:12px;cursor:${typeof ATTACK_PATTERNS_META!=='undefined'&&ATTACK_PATTERNS_META[p.trigger_type]?'help':'default'}">${(()=>{const k='pb_desc_'+p.trigger_type;const v=t(k);return v===k?p.description:v;})()}</td>
+    <td style="text-align:center">${p.auto_isolate?`<span style="color:var(--red)">🔒 ${t('lbl_yes')}</span>`:`<span style="color:var(--muted)">${t('lbl_no')}</span>`}</td>
+    <td style="text-align:center">${p.notify_telegram?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--muted)">—</span>'}</td>
+    <td style="text-align:center">${p.min_severity}</td>
+    <td style="text-align:center">${p.cooldown_minutes}</td>
+    <td><button class="btn" style="font-size:11px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);color:var(--muted)" onclick='openPlaybookModal(${JSON.stringify(p)})'>${t('btn_edit').replace('✎ ','')}</button></td>
+  </tr>`).join('');
+}
+document.addEventListener('langChanged', () => { if(_playbooksCache.length) renderPlaybooksFiltered(); });
+
+// ── License ──────────────────────────────────────────────────────────────────
+let _licReqData = null;
+
+async function loadLicense() {
+  const d = await fetch('/api/license/status', {credentials:'include'}).then(r=>r.json()).catch(()=>({}));
+  const valid = d.valid;
+  document.getElementById('lic-badge').textContent    = valid ? ('✓ ' + (d.edition||'').toUpperCase()) : t('lbl_lic_inactive');
+  document.getElementById('lic-badge').style.color    = valid ? 'var(--green)' : 'var(--red)';
+  document.getElementById('lic-edition').textContent  = valid ? (d.issued_to||'') : t('lbl_community');
+  document.getElementById('lic-issued-to').textContent = d.issued_to || '—';
+  document.getElementById('lic-expires').textContent  = d.expires ? d.expires.substring(0,10) : (valid ? t('lbl_unlimited') : '—');
+  document.getElementById('lic-max-agents').textContent  = d.max_agents >= 999999 ? '∞' : (d.max_agents||'—');
+  document.getElementById('lic-max-clients').textContent = d.max_clients >= 999999 ? '∞' : (d.max_clients||'—');
+  document.getElementById('lic-hwid').textContent     = d.hwid || '—';
+
+  // Agents list
+  const ag = await fetch('/api/license/agents', {credentials:'include'}).then(r=>r.json()).catch(()=>({}));
+  const el = document.getElementById('lic-agents-list');
+  if (ag.agents && ag.agents.length) {
+    el.innerHTML = ag.agents.map(a => {
+      const ok = a.allowed;
+      const icon = ok ? '✅' : '🚫';
+      const style = ok ? 'color:var(--text)' : 'color:var(--muted);text-decoration:line-through';
+      return `<div style="${style}">${icon} <b>${a.name}</b> <span style="color:var(--muted)">(${a.status})</span></div>`;
+    }).join('');
+  } else {
+    el.textContent = '—';
+  }
+}
+
+async function generateLicenseRequest() {
+  const d = await fetch('/api/license/request', {credentials:'include'}).then(r=>r.json()).catch(()=>({}));
+  if (d.error === 'no_internet') {
+    const el = document.getElementById('lic-req-msg');
+    el.textContent = '⚠️ ' + (d.message || 'Internet connection required for activation request.');
+    el.style.color = 'var(--red)';
+    el.style.display = '';
+    setTimeout(() => { el.style.display = 'none'; }, 8000);
+    return;
+  }
+  const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sentinelhq_' + (d.hostname||'request') + '.req';
+  a.click();
+}
+
+function loadLicenseFile(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = e => { document.getElementById('lic-key-input').value = e.target.result; };
+  r.readAsText(f);
+}
+
+async function activateLicense() {
+  const key_content = document.getElementById('lic-key-input').value.trim();
+  if (!key_content) { showLicMsg(t('msg_lic_empty')||'Įveskite licencijos turinį', 'red'); return; }
+  const d = await fetch('/api/license/activate', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key_content})
+  }).then(r=>r.json()).catch(e=>({success:false, message:String(e)}));
+  const msg = d.message || '';
+  let licMsg;
+  if (msg.startsWith('ok:')) {
+    const parts = msg.slice(3).split(':');
+    const issuedTo = parts[0]||'', edition = parts[1]||'', expires = parts[2]||'';
+    const expTxt = expires ? ' · ' + expires : '';
+    licMsg = t('msg_lic_activated').replace('{issued_to}', issuedTo).replace('{edition}', edition).replace('{expires}', expTxt);
+  } else if (msg.startsWith('err_expired:')) {
+    licMsg = t('msg_lic_expired').replace('{date}', msg.slice(12));
+  } else if (msg === 'err_invalid_format')  { licMsg = t('msg_lic_invalid_format');
+  } else if (msg === 'err_invalid_signature') { licMsg = t('msg_lic_invalid_sig');
+  } else if (msg === 'err_signature_check') { licMsg = t('msg_lic_sig_check');
+  } else if (msg === 'err_hwid_mismatch')   { licMsg = t('msg_lic_hwid_mismatch');
+  } else { licMsg = msg; }
+  showLicMsg(licMsg, d.success ? 'green' : 'red');
+  if (d.success) { document.getElementById('lic-key-input').value=''; loadLicense(); }
+}
+
+function showLicMsg(msg, color) {
+  const el = document.getElementById('lic-activate-msg');
+  el.textContent = msg;
+  el.style.color = color==='green' ? 'var(--green)' : 'var(--red)';
+  el.style.display = '';
+  setTimeout(()=>{ el.style.display='none'; }, 5000);
+}
+function clearPlaybooksFilters(){
+  ['fpb-sig','fpb-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fpb-enabled','fpb-isolate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderPlaybooksFiltered();
+}
+
+function openPlaybookModal(p){
+  document.getElementById('pb-id').value=p.id;
+  document.getElementById('pb-trigger').value=p.trigger_type;
+  const _pbDescKey='pb_desc_'+p.trigger_type; const _pbDescVal=t(_pbDescKey);
+  document.getElementById('pb-desc').value=(_pbDescVal===_pbDescKey?p.description:_pbDescVal);
+  document.getElementById('pb-severity').value=p.min_severity;
+  document.getElementById('pb-cooldown').value=p.cooldown_minutes;
+  document.getElementById('pb-enabled').checked=p.enabled;
+  document.getElementById('pb-isolate').checked=p.auto_isolate;
+  document.getElementById('pb-notify').checked=p.notify_telegram;
+  const m=document.getElementById('playbook-modal');
+  m.style.display='flex';
+}
+
+function closePlaybookModal(){
+  document.getElementById('playbook-modal').style.display='none';
+}
+
+async function savePlaybook(){
+  const id=document.getElementById('pb-id').value;
+  const body={
+    description: document.getElementById('pb-desc').value,
+    min_severity: parseInt(document.getElementById('pb-severity').value),
+    cooldown_minutes: parseInt(document.getElementById('pb-cooldown').value),
+    enabled: document.getElementById('pb-enabled').checked,
+    auto_isolate: document.getElementById('pb-isolate').checked,
+    notify_telegram: document.getElementById('pb-notify').checked,
+  };
+  const r=await fetch(`/api/playbooks/${id}`,{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){closePlaybookModal();loadPlaybooks();}
+  else alert('Klaida išsaugant');
+}
+
+let _blockedCache=[];
+async function loadBlockedIPs(){
+  _blockedCache=await fetch('/api/blocked-ips',{credentials:'include'}).then(r=>r.json());
+  renderBlockedFiltered();
+}
+function renderBlockedFiltered(){
+  const ipF=(document.getElementById('fb-ip')?.value||'').toLowerCase();
+  const rsF=(document.getElementById('fb-reason')?.value||'').toLowerCase();
+  const stF=document.getElementById('fb-status')?.value||'';
+  const now=new Date();
+  const rows=_blockedCache.filter(r=>{
+    const isActive=!r.unblocked_at&&(!r.blocked_until||new Date(r.blocked_until)>now);
+    if(stF==='active'&&!isActive)return false;
+    if(stF==='unblocked'&&!r.unblocked_at)return false;
+    if(ipF&&!(r.ip||'').toLowerCase().includes(ipF))return false;
+    if(rsF&&!(r.reason||'').toLowerCase().includes(rsF))return false;
+    return true;
+  });
+  const countEl=document.getElementById('blocked-count');
+  if(countEl)countEl.textContent=rows.length+(rows.length<_blockedCache.length?' / '+_blockedCache.length:'')+' '+t('lbl_records');
+  const tbody=document.getElementById('blocked-ips-body');
+  tbody.innerHTML=rows.map(r=>{
+    const isActive=!r.unblocked_at&&(!r.blocked_until||new Date(r.blocked_until)>now);
+    const statusCell=r.unblocked_at
+      ? `<span class="pill approved">${t('lbl_unblocked')}</span>`
+      : isActive
+        ? `<span class="pill dismissed">${t('lbl_active_block')}</span>`
+        : `<span class="pill" style="background:rgba(100,116,139,.15);color:var(--muted)">${t('lbl_expired')}</span>`;
+    const actionCell=isActive
+      ? `<button class="btn btn-muted" style="padding:3px 10px;font-size:11px" onclick="unblockIP('${esc(r.ip)}')">🔓 ${t('btn_unisolate')}</button>`
+      : `—`;
+    return `<tr>
+      <td style="font-family:monospace">${esc(r.ip)}</td>
+      <td><span class="pill" style="background:rgba(79,156,249,.1);color:var(--accent)">${esc(r.source||'')}</span></td>
+      <td style="color:var(--muted)">${fmtDate(r.blocked_at)}</td>
+      <td style="color:var(--muted)">${fmtDate(r.blocked_until)}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(r.reason||'—')}</td>
+      <td>${statusCell}</td>
+      <td>${actionCell}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('blocked-ips-empty').style.display=rows.length?'none':'block';
+}
+function clearBlockedFilters(){
+  ['fb-ip','fb-reason'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('fb-status').value='';
+  renderBlockedFiltered();
+}
+
+async function unblockIP(ip){
+  if(!confirm('Atblokuoti '+ip+'?'))return;
+  const r=await fetch('/api/unblock-ip',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({ip})});
+  const d=await r.json();
+  if(d.ok)loadBlockedIPs();
+}
+
+// ── Correlations ─────────────────────────────────────────────────────────────
+let _corrCache=[],_corrStatus='open';
+async function loadCorr(status,tabEl){
+  if(tabEl){document.querySelectorAll('#page-correlations .tab').forEach(t=>t.classList.remove('active'));tabEl.classList.add('active');}
+  _corrStatus=status||_corrStatus;
+  const d=await fetch('/api/correlations?status='+_corrStatus).then(r=>r.json());
+  _corrCache=d.items||[];
+  renderCorrFiltered();
+}
+function renderCorrFiltered(){
+  const agF=(document.getElementById('fc-agent')?.value||'').toLowerCase();
+  const tyF=(document.getElementById('fc-type')?.value||'').toLowerCase();
+  const dsF=(document.getElementById('fc-desc')?.value||'').toLowerCase();
+  const items=_corrCache.filter(c=>
+    (!agF||(c.agent_name||c.agent_id||'').toLowerCase().includes(agF))&&
+    (!tyF||(c.pattern_type||'').toLowerCase().includes(tyF))&&
+    (!dsF||(c.summary||'').toLowerCase().includes(dsF))
+  );
+  const countEl=document.getElementById('corr-count');
+  if(countEl)countEl.textContent=items.length+(items.length<_corrCache.length?' / '+_corrCache.length:'')+' '+t('lbl_records');
+  const sevColor=s=>s>=13?'var(--red)':s>=10?'var(--amber)':'var(--accent)';
+  const sevEmoji=s=>s>=13?'🔴':s>=10?'🟠':'🟡';
+  document.getElementById('corr-body').innerHTML=items.map(c=>`<tr style="cursor:pointer" onclick="openCorrDetail(${c.id})">
+    <td><span style="color:${sevColor(c.severity)};font-weight:600">${sevEmoji(c.severity)} ${c.severity}</span></td>
+    <td><span style="color:var(--purple);font-size:11px">${c.pattern_type.toUpperCase().replace(/_/g,' ')}</span></td>
+    <td>${c.agent_name||c.agent_id}</td>
+    <td><div class="rdesc">${c.summary}</div></td>
+    <td style="color:var(--muted)">${(c.alert_ids||[]).length}</td>
+    <td style="color:var(--muted)">${fmtDate(c.detected_at)}</td>
+    <td>
+      <div style="display:flex;gap:6px">
+        ${c.status==='open'?`
+        <button class="btn btn-muted" style="padding:4px 10px;font-size:11px" onclick="setCorrStatus(${c.id},'investigating')">&#128269; ${t('btn_investigate').replace('🔍 ','')}</button>
+        <button class="btn btn-green" style="padding:4px 10px;font-size:11px" onclick="setCorrStatus(${c.id},'resolved')">&#10003;</button>
+        <button class="btn btn-muted" style="padding:4px 10px;font-size:11px" onclick="setCorrStatus(${c.id},'false_positive')">&#10005;</button>`:''}
+        ${c.status==='investigating'?`
+        <button class="btn btn-green" style="padding:4px 10px;font-size:11px" onclick="setCorrStatus(${c.id},'resolved')">&#10003; ${t('btn_resolved').replace('✓ ','')}</button>`:''}
+      </div>
+    </td>
+  </tr>`).join('')||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">${t('no_data')}</td></tr>`;
+  document.getElementById('corr-empty').style.display=items.length?'none':'block';
+}
+function clearCorrFilters(){
+  ['fc-agent','fc-type','fc-desc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderCorrFiltered();
+}
+
+async function openCorrDetail(id){
+  document.getElementById('d-title').textContent=t('loading');
+  document.getElementById('d-body').innerHTML=`<div style="padding:20px;color:var(--muted)">${t('loading')}</div>`;
+  document.getElementById('overlay').classList.add('open');
+
+  const resp = await fetch(`/api/correlations/${id}/detail`).then(r=>r.json());
+  const c    = resp.correlation;
+  const alts = resp.alerts || [];
+  if(!c){ document.getElementById('d-title').textContent=t('no_data'); return; }
+
+  const sevColor = c.severity>=13?'var(--red)':c.severity>=10?'var(--amber)':'var(--accent)';
+  document.getElementById('d-title').textContent =
+    `${c.pattern_type.replace(/_/g,' ')} · ${c.agent_name} · Severity ${c.severity}`;
+
+  // Timeline items — grupuojame pasikartojančius Lv3 įvykius
+  const timelineItems = (() => {
+    const rows = [];
+    let i = 0;
+    while (i < alts.length) {
+      const a = alts[i];
+      // Login įvykių (4624/4625) negrupuojame — kiekvienas turi savo laiką ir kontekstą
+      const isLoginEvent = (a.rule_id == 4624 || a.rule_id == 4625);
+      const key = a.rule_id + '|' + (a.src_proc_name||'') + '|' + (a.dst_proc_name||'');
+      // Grupuoti Lv<7 pasikartojančius (išskyrus login įvykius)
+      if (a.rule_level < 7 && !isLoginEvent) {
+        let count = 1;
+        while (i + count < alts.length) {
+          const b = alts[i + count];
+          const bkey = b.rule_id + '|' + (b.src_proc_name||'') + '|' + (b.dst_proc_name||'');
+          if (bkey === key && b.rule_level < 7) count++;
+          else break;
+        }
+        if (count > 1) {
+          const proc = a.src_proc_name ? `<span style="color:var(--accent)">${esc(a.src_proc_name)}</span>${a.dst_proc_name?` → <span style="color:var(--muted)">${esc(a.dst_proc_name)}</span>`:''}` : '';
+          rows.push(`<div style="display:flex;align-items:center;gap:12px;padding:5px 0;border-bottom:1px solid var(--border);opacity:.55">
+            <div style="min-width:60px;color:var(--muted);font-size:10px;font-family:monospace">×${count}</div>
+            <div style="min-width:20px;font-size:12px">⚪</div>
+            <div style="flex:1;font-size:11px;color:var(--muted)">
+              <span style="color:var(--muted)">Rule ${a.rule_id}</span> Lv${a.rule_level}
+              ${a.mitre_id?`<span style="color:var(--muted);font-size:10px"> [${a.mitre_id}]</span>`:''}
+              — ${proc}
+            </div>
+          </div>`);
+          i += count;
+          continue;
+        }
+      }
+      // Normalus įvykis
+      const lvColor = a.rule_level>=12?'var(--red)':a.rule_level>=7?'var(--amber)':'var(--muted)';
+      const lvEmoji = a.rule_level>=12?'🔴':a.rule_level>=7?'🟡':'⚪';
+      const ts = a.alert_ts||'';
+      const time = (() => { try { const d=new Date(ts); return d.toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); } catch(e) { return ts.slice(11,19); } })();
+      const proc  = a.src_proc_name ? `<span style="color:var(--accent)">${esc(a.src_proc_name)}</span>${a.dst_proc_name?` → <span style="color:var(--amber)">${esc(a.dst_proc_name)}</span>`:''}` : '';
+      const mitre = a.mitre_id ? `<span style="color:var(--red);font-size:10px">[${a.mitre_id}]</span>` : '';
+      const popupId = 'popup-'+id+'-'+i;
+      rows.push(`<div style="display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);position:relative;cursor:default"
+        onmouseenter="showAlertPopup('${popupId}','${a.wazuh_id||''}')"
+        onmouseleave="hideAlertPopup('${popupId}')">
+        <div style="min-width:60px;color:var(--muted);font-size:11px;font-family:monospace;padding-top:2px">${time}</div>
+        <div style="min-width:20px;font-size:14px">${lvEmoji}</div>
+        <div style="flex:1">
+          <div style="font-size:12px">
+            <span style="color:var(--accent);font-weight:600">Rule ${a.rule_id}</span>
+            <span style="color:${lvColor};margin-left:6px">Lv${a.rule_level}</span>
+            ${mitre ? '<span style="margin-left:6px">'+mitre+'</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(a.rule_desc||'').slice(0,120)}</div>
+          <div style="font-size:11px;margin-top:2px">${proc}</div>
+        </div>
+        <div id="${popupId}" style="display:none;position:absolute;left:0;top:100%;z-index:300;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;min-width:420px;max-width:600px;font-size:11px;font-family:monospace;white-space:pre-wrap;word-break:break-all;box-shadow:0 8px 32px rgba(0,0,0,.4);color:var(--text);line-height:1.6"></div>
+      </div>`);
+      i++;
+    }
+    return rows.join('');
+  })();
+
+  document.getElementById('d-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${t('lbl_status')}</div>
+        <span class="pill ${c.status}">${c.status}</span>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${t('lbl_detected_at')}</div>
+        <span style="font-size:11px">${fmtDate(c.detected_at)}</span>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${t('lbl_alerts')}</div>
+        <span style="font-size:13px;font-weight:600;color:${sevColor}">${alts.length}</span>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--muted)">${c.summary}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.05em">${t('chain_title')}</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+      ${timelineItems || `<div style="color:var(--muted);font-size:12px;padding:8px">${t('chain_empty')}</div>`}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      ${c.status==='open'?`
+        <button class="btn btn-muted" onclick="setCorrStatus(${id},'investigating');closeOverlayDirect()">${t('btn_investigate')}</button>
+        <button class="btn btn-green" onclick="setCorrStatus(${id},'resolved');closeOverlayDirect()">${t('btn_resolved')}</button>
+        <button class="btn btn-muted" onclick="setCorrStatus(${id},'false_positive');closeOverlayDirect()">${t('btn_false_positive')}</button>`:''}
+      ${c.status==='investigating'?`
+        <button class="btn btn-green" onclick="setCorrStatus(${id},'resolved');closeOverlayDirect()">${t('btn_resolved')}</button>
+        <button class="btn btn-muted" onclick="setCorrStatus(${id},'false_positive');closeOverlayDirect()">${t('btn_false_positive')}</button>`:''}
+    </div>
+  `;
+}
+
+const _alertCache={};
+
+async function showAlertPopup(popupId, wazuhId){
+  const el=document.getElementById(popupId);
+  if(!el) return;
+  el.style.display='block';
+
+  if(_alertCache[wazuhId]){
+    el.innerHTML=_alertCache[wazuhId];
+    return;
+  }
+
+  el.innerHTML=`<span style="color:var(--muted)">${t('loading')}</span>`;
+
+  try{
+    const d=await fetch(`/api/alert/${wazuhId}/detail`).then(r=>r.json());
+    if(!d.ok){ el.innerHTML=`<span style="color:var(--muted)">${t('no_data')}</span>`; return; }
+    const s=d.source;
+    const rule=s.rule||{};
+    const agent=s.agent||{};
+    const evd=(s.data?.win?.eventdata)||{};
+    const sys=(s.data?.win?.system)||{};
+    const mitre=rule.mitre||{};
+
+    const ts=s.timestamp||'';
+    const lines=[
+      `<b style="color:var(--accent)">⏰ ${ts.replace('T',' ').slice(0,23)}</b>`,
+      `<b>Rule:</b> ${rule.id} — ${rule.description||''}`,
+      `<b>Level:</b> <span style="color:${rule.level>=12?'var(--red)':rule.level>=7?'var(--amber)':'var(--muted)'}">${rule.level}</span>`,
+      `<b>Agent:</b> ${agent.name} (${agent.ip||''})`,
+      rule.groups?.length ? `<b>Groups:</b> ${rule.groups.join(', ')}` : '',
+      mitre.technique?.length ? `<b>MITRE:</b> ${mitre.id?.join(', ')} — ${mitre.technique?.join(', ')} [${mitre.tactic?.join(', ')||''}]` : '',
+      evd.image ? `<b>Process:</b> ${evd.image}` : '',
+      evd.parentImage ? `<b>Parent:</b> ${evd.parentImage}` : '',
+      evd.commandLine ? `<b>Cmd:</b> ${esc(evd.commandLine.slice(0,200))}` : '',
+      evd.sourceImage ? `<b>Src:</b> ${evd.sourceImage}` : '',
+      evd.targetImage ? `<b>Dst:</b> ${evd.targetImage}` : '',
+      evd.queryName ? `<b>DNS:</b> ${evd.queryName}` : '',
+      evd.targetObject ? `<b>Registry:</b> ${evd.targetObject.slice(0,120)}` : '',
+      evd.user ? `<b>User:</b> ${evd.user}` : '',
+      (()=>{ const h=(evd.hashes?.match(/SHA256=([A-F0-9]+)/i)||[])[1]; return h?`<b>SHA256:</b> <a href="https://www.virustotal.com/gui/search/${h}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${h.slice(0,16)}…</a>`:''; })(),
+      (()=>{ const d=ts.slice(0,10).replace(/-/g,'.'); const idx=d?`wazuh-alerts-4.x-${d}`:'wazuh-alerts-*'; return wazuhId?`<b>Wazuh:</b> <a href="${WAZUH_DASHBOARD_URL}:5601/app/discover#/doc/wazuh-alerts-*/${idx}?id=${encodeURIComponent(wazuhId)}" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:underline dotted">Open in Wazuh ↗</a>`:''; })(),
+    ].filter(Boolean).join('<br>');
+
+    _alertCache[wazuhId]=lines;
+    el.innerHTML=lines;
+  }catch(e){
+    el.innerHTML=`<span style="color:var(--red)">${t('err_generic')}: ${e}</span>`;
+  }
+}
+
+function hideAlertPopup(id){
+  const el=document.getElementById(id);
+  if(el) el.style.display='none';
+}
+
+
+async function setCorrStatus(id,status){
+  await fetch('/api/correlations/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  loadCorr(status==='false_positive'||status==='resolved'?'open':'investigating');
+}
+
+// Toast notifications
+async function loadRebootStatus(){
+  try{
+    const d=await fetch('/api/wazuh/pending-reboot').then(r=>r.json());
+    const btn=document.getElementById('reboot-btn');
+    const cnt=document.getElementById('reboot-count');
+    if(!btn) return;
+    if(d.pending>0){
+      btn.disabled=false;
+      btn.innerHTML=t('btn_reboot')+' <span id="reboot-count" style="background:rgba(255,255,255,.2);border-radius:10px;padding:1px 8px;margin-left:6px">'+d.pending+'</span>';
+      btn.style.display='flex';
+    } else {
+      btn.style.display='none';
+    }
+  }catch(e){}
+}
+
+async function wazuhReboot(){
+  if(!confirm(t('confirm_reboot'))) return;
+  const btn=document.getElementById('reboot-btn');
+  btn.disabled=true;
+  btn.textContent=t('toast_rebooting');
+  try{
+    const d=await fetch('/api/wazuh/reboot',{method:'POST'}).then(r=>r.json());
+    if(d.ok){
+      showToast('✅ '+d.message+' '+t('toast_reboot_ok')+' '+d.deleted_alerts,'green');
+      await loadRebootStatus();
+      refreshAll();
+      loadCands();
+    } else {
+      showToast('❌ '+(d.message||t('err_generic')),'red');
+      btn.disabled=false;
+      btn.innerHTML=t('btn_reboot')+' <span id="reboot-count" style="background:rgba(255,255,255,.2);border-radius:10px;padding:1px 8px;margin-left:6px"></span>';
+    }
+  }catch(e){
+    showToast('❌ '+t('err_generic')+': '+e,'red');
+    btn.disabled=false;
+    btn.innerHTML=t('btn_reboot')+' <span id="reboot-count" style="background:rgba(255,255,255,.2);border-radius:10px;padding:1px 8px;margin-left:6px"></span>';
+  }
+}
+
+function showToast(msg, color='green'){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--${color});
+    border-radius:8px;padding:12px 20px;font-size:13px;color:var(--text);z-index:999;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:400px;`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+// IP Info
+const _ipCache = {};
+async function ipInfo(el) {
+  const ip = el.dataset.ip;
+  if(!ip) return;
+  if(_ipCache[ip]) { el.dataset.tip = _ipCache[ip]; return; }
+  el.dataset.tip = t('loading');
+  try {
+    const d = await fetch('/api/ipinfo?ip='+encodeURIComponent(ip)).then(r=>r.json());
+    const parts = [d.hostname, d.org, d.city, d.country].filter(Boolean);
+    _ipCache[ip] = parts.length ? parts.join(' · ') : ip;
+    el.dataset.tip = _ipCache[ip];
+  } catch(e) { el.dataset.tip = ip; }
+}
+
+// ── Agents ───────────────────────────────────────────────────────────────────
+let _agentsCache=[];
+let _allowedAgents=null;
+async function loadAgents(){
+  document.getElementById('agents-loading').style.display='block';
+  document.getElementById('agents-empty').style.display='none';
+  document.getElementById('agents-body').innerHTML='';
+  try{
+    const d=await fetch('/api/agents').then(r=>r.json());
+    _agentsCache=d.agents||[];
+    try{
+      const lic=await fetch('/api/license/agents',{credentials:'include'}).then(r=>r.json());
+      _allowedAgents=lic.limited ? new Set((lic.agents||[]).filter(a=>a.allowed).map(a=>a.name)) : null;
+    }catch(e){ _allowedAgents=null; }
+    document.getElementById('agents-loading').style.display='none';
+    const isolated=_agentsCache.filter(a=>a.isolated);
+    const isoBar=document.getElementById('agents-iso-bar');
+    if(isolated.length>0){isoBar.style.display='flex';document.getElementById('agents-iso-count').textContent=`🔒 ${isolated.length}`;}
+    else{isoBar.style.display='none';}
+    renderAgentsFiltered();
+  }catch(e){
+    document.getElementById('agents-loading').style.display='none';
+    document.getElementById('agents-empty').style.display='block';
+    console.error('loadAgents error:',e);
+  }
+}
+function renderAgentsFiltered(){
+  const nmF=(document.getElementById('fag-name')?.value||'').toLowerCase();
+  const ipF=(document.getElementById('fag-ip')?.value||'').toLowerCase();
+  const stF=document.getElementById('fag-status')?.value||'';
+  const isF=document.getElementById('fag-iso')?.value||'';
+  const agents=_agentsCache.filter(a=>
+    (!nmF||(a.name||'').toLowerCase().includes(nmF))&&
+    (!ipF||(a.ip||'').toLowerCase().includes(ipF))&&
+    (!stF||(a.status||'')=== stF)&&
+    (isF===''||(isF==='1'?a.isolated:!a.isolated))
+  );
+  const countEl=document.getElementById('agents-count');
+  if(countEl)countEl.textContent=agents.length+(agents.length<_agentsCache.length?' / '+_agentsCache.length:'')+' '+t('lbl_agents_count');
+  if(!agents.length){document.getElementById('agents-empty').style.display='block';document.getElementById('agents-body').innerHTML='';return;}
+  document.getElementById('agents-empty').style.display='none';
+  const tbody=document.getElementById('agents-body');
+  tbody.innerHTML=agents.map(a=>{
+    const status=a.status||'unknown';
+    const statusColor=status==='active'?'var(--green)':status==='disconnected'?'var(--amber)':'var(--muted)';
+    const statusDot=status==='active'?'●':'○';
+    const statusLabel=status==='active'?t('agent_status_active'):status==='disconnected'?t('agent_status_disconnected'):status;
+    const os=(a.os?.name||a.os?.platform||'?');
+    const ip=a.ip||'?';
+    const monitored = a.id === '000' || _allowedAgents === null || _allowedAgents.has(a.name||'');
+    const monBadge = monitored ? '' : `<span style="margin-left:6px;background:rgba(255,80,80,.15);color:var(--red);border-radius:4px;padding:1px 6px;font-size:10px">🚫 ${t('lbl_agent_blocked')}</span>`;
+    const isoTime=a.isolation_at?new Date(a.isolation_at).toLocaleString('lt-LT',{dateStyle:'short',timeStyle:'short'}):'';
+    const isoBadge=a.isolated
+      ?`<span style="background:var(--red);color:#fff;border-radius:4px;padding:2px 7px;font-size:11px">🔒 ${t('agent_isolated')}</span>`
+      :`<span style="color:var(--green);font-size:11px">✓ ${t('agent_free')}</span>`;
+    const isoBtn=!monitored
+      ?`<button disabled style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-family:var(--font);font-size:11px;padding:4px 10px;cursor:not-allowed;opacity:0.4">🔒 ${t('btn_isolate')}</button>`
+      :a.isolated
+        ?`<button onclick="agentUnisolate('${a.id}','${a.name}')" style="background:var(--bg3);border:1px solid var(--green);border-radius:5px;color:var(--green);font-family:var(--font);font-size:11px;padding:4px 10px;cursor:pointer">🔓 ${t('btn_unisolate')}</button>`
+        :`<button onclick="agentIsolate('${a.id}','${a.name}')" style="background:var(--bg3);border:1px solid var(--red);border-radius:5px;color:var(--red);font-family:var(--font);font-size:11px;padding:4px 10px;cursor:pointer">🔒 ${t('btn_isolate')}</button>`;
+    return `<tr style="${monitored?'':'opacity:0.5'}">
+      <td><b>${a.name||'?'}</b>${monBadge}</td>
+      <td style="color:var(--muted)">${a.id}</td>
+      <td style="color:var(--muted)">${ip}</td>
+      <td style="color:var(--muted)">${os}</td>
+      <td style="color:${statusColor}">${statusDot} ${statusLabel}</td>
+      <td>${isoBadge}${isoTime?`<br><span style="color:var(--muted);font-size:10px">${isoTime} · ${a.isolation_actor||''}</span>`:''}</td>
+      <td>${isoBtn}</td>
+    </tr>`;
+  }).join('');
+}
+function clearAgentsFilters(){
+  ['fag-name','fag-ip'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['fag-status','fag-iso'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderAgentsFiltered();
+}
+
+const _isoInProgress = new Set();
+
+async function agentIsolate(agentId,agentName){
+  if(_isoInProgress.has(agentId)) return showToast('⏳ Jau vykdoma...','amber');
+  if(!confirm(`🔒 Izoliuoti agentą "${agentName}"?\n\nAgentas neteks tinklo prieigos.`)) return;
+  _isoInProgress.add(agentId);
+  try{
+    const r=await fetch(`/api/isolate/${agentId}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({agent_name:agentName,hostname:agentName,reason:'Manual isolation from dashboard'})
+    }).then(r=>r.json());
+    if(r.ok){
+      showToast(`✅ ${agentName} izoliuotas`,'green');
+    } else {
+      showToast(`❌ Klaida: ${r.message}`,'red');
+    }
+    loadAgents();
+  }catch(e){showToast('❌ Ryšio klaida','red');}
+  finally{_isoInProgress.delete(agentId);}
+}
+
+async function agentUnisolate(agentId,agentName){
+  if(_isoInProgress.has(agentId)) return showToast('⏳ Jau vykdoma...','amber');
+  if(!confirm(`🔓 Atblokuoti agentą "${agentName}"?\n\nAgentas atgaus tinklo prieigą.`)) return;
+  _isoInProgress.add(agentId);
+  try{
+    const r=await fetch(`/api/unisolate/${agentId}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({agent_name:agentName,hostname:agentName,reason:'Manual unisolation from dashboard'})
+    }).then(r=>r.json());
+    if(r.ok){
+      showToast(`✅ ${agentName} atblokuotas`,'green');
+    } else {
+      showToast(`❌ Klaida: ${r.message}`,'red');
+    }
+    loadAgents();
+  }catch(e){showToast('❌ Ryšio klaida','red');}
+  finally{_isoInProgress.delete(agentId);}
+}
+
+function showToast(msg,color='green'){
+  let t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--${color});color:var(--text);padding:10px 18px;border-radius:8px;font-size:12px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.4)`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ── Deploy Agent Modal ───────────────────────────────────────────────────────
+const MANAGER_IP = '{{ manager_ip | default("192.168.1.177") }}';
+const WAZUH_DASHBOARD_URL = '{{ wazuh_dashboard_url | default("https://192.168.1.177") }}';
+const WAZUH_VER  = '4.14.4';
+const VELO_VER   = '0.75.6';
+let _mainTab  = 'wazuh';
+let _wazuhOS  = 'windows';
+let _veloOS   = 'win';
+
+function _setSubBtns(prefix, ids, active){
+  ids.forEach(function(o){
+    var btn = document.getElementById(prefix + o);
+    if(!btn) return;
+    var on = (o === active);
+    btn.style.background  = on ? 'var(--accent)' : 'var(--bg3)';
+    btn.style.color       = on ? '#fff'           : 'var(--muted)';
+    btn.style.borderColor = on ? 'var(--accent)'  : 'var(--border)';
+  });
+}
+
+function setMainTab(tab){
+  _mainTab = tab;
+  ['wazuh','velo'].forEach(function(t){
+    var btn = document.getElementById('main-tab-'+t);
+    if(!btn) return;
+    var on = (t === tab);
+    btn.style.background  = on ? 'var(--accent)' : 'var(--bg3)';
+    btn.style.color       = on ? '#fff'           : 'var(--muted)';
+    btn.style.borderColor = on ? 'var(--accent)'  : 'var(--border)';
+  });
+  document.getElementById('wazuh-os-selector').style.display = (tab === 'wazuh') ? 'flex' : 'none';
+  document.getElementById('velo-os-selector').style.display  = (tab === 'velo')  ? 'flex' : 'none';
+  updateDeployScript();
+}
+
+function setWazuhOS(os){
+  _wazuhOS = os;
+  _setSubBtns('wazuh-tab-', ['win','deb','rpm'], os === 'windows' ? 'win' : os === 'linux' ? 'deb' : 'rpm');
+  updateDeployScript();
+}
+
+function setVeloOS(os){
+  _veloOS = os;
+  _setSubBtns('velo-tab-', ['win','deb','rpm'], os);
+  updateDeployScript();
+}
+
+function openDeployModal(){
+  document.getElementById('deploy-modal').style.display='flex';
+  updateDeployScript();
+}
+function closeDeployModal(){
+  document.getElementById('deploy-modal').style.display='none';
+}
+
+// keep old setDeployOS as no-op for safety
+function setDeployOS(os){}
+function updateDeployScript(){
+  var name = document.getElementById('deploy-agent-name').value.trim();
+  var ip   = MANAGER_IP;
+  var ver  = WAZUH_VER;
+  var script = '', instructions = '';
+  var _deployOS = (_mainTab === 'velo') ? 'velo' : _wazuhOS;
+
+  if(_deployOS === 'windows'){
+    var lines = [
+      '# 1. '+t('sc_download_install'),
+      'Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-' + ver + '-1.msi `',
+      '    -OutFile $env:tmp\\wazuh-agent.msi',
+      '',
+      'msiexec.exe /i $env:tmp\\wazuh-agent.msi /q `',
+      "    WAZUH_MANAGER='" + ip + "' `",
+      "    WAZUH_REGISTRATION_SERVER='" + ip + "' `",
+      "    WAZUH_REGISTRATION_PORT='1515' `",
+      "    WAZUH_AGENT_GROUP='default' `"
+    ];
+    if(name) lines.push("    WAZUH_AGENT_NAME='" + name + "' `");
+    lines.push("    WAZUH_PROTOCOL='TCP'");
+    lines.push('');
+    lines.push('# 2. '+t('sc_wait_start'));
+    lines.push('Start-Sleep -Seconds 10');
+    lines.push('NET START Wazuh');
+    lines.push('');
+    lines.push('Write-Host "'+t('sc_agent_connected')+'" -ForegroundColor Green');
+    script = lines.join('\n');
+    instructions = '<b>'+t('deploy_steps_title')+'</b><br>'
+      + '1. '+t('deploy_win_step1')+'<br>'
+      + '2. '+t('deploy_win_step2')+'<br>'
+      + '3. '+t('deploy_win_step3');
+
+  } else if(_deployOS === 'linux'){
+    var installCmd = "sudo WAZUH_MANAGER='" + ip + "' ";
+    if(name) installCmd += "WAZUH_AGENT_NAME='" + name + "' ";
+    installCmd += "WAZUH_REGISTRATION_SERVER='" + ip + "' WAZUH_AGENT_GROUP='default' dpkg -i /tmp/wazuh-agent.deb";
+    var lines = [
+      '# 1. '+t('sc_download'),
+      'curl -so /tmp/wazuh-agent.deb \\',
+      '  https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_' + ver + '-1_amd64.deb',
+      '',
+      '# 2. '+t('sc_install'),
+      installCmd,
+      '',
+      '# 3. '+t('sc_enable_start'),
+      'sudo systemctl daemon-reload',
+      'sudo systemctl enable wazuh-agent',
+      'sudo systemctl start wazuh-agent',
+      '',
+      '# 4. '+t('sc_check_status'),
+      'systemctl status wazuh-agent --no-pager',
+    ];
+    script = lines.join('\n');
+    instructions = '<b>'+t('deploy_steps_title')+'</b><br>'
+      + '1. '+t('deploy_linux_step1')+'<br>'
+      + '2. '+t('deploy_deb_step2');
+
+  } else if(_deployOS === 'rpm'){
+    var installCmd = "sudo WAZUH_MANAGER='" + ip + "' ";
+    if(name) installCmd += "WAZUH_AGENT_NAME='" + name + "' ";
+    installCmd += "WAZUH_REGISTRATION_SERVER='" + ip + "' WAZUH_AGENT_GROUP='default' rpm -ihv /tmp/wazuh-agent.rpm";
+    var lines = [
+      '# 1. '+t('sc_download'),
+      'curl -so /tmp/wazuh-agent.rpm \\',
+      '  https://packages.wazuh.com/4.x/yum/wazuh-agent-' + ver + '-1.x86_64.rpm',
+      '',
+      '# 2. '+t('sc_install'),
+      installCmd,
+      '',
+      '# 3. '+t('sc_enable_start'),
+      'sudo systemctl daemon-reload',
+      'sudo systemctl enable wazuh-agent',
+      'sudo systemctl start wazuh-agent',
+      '',
+      '# 4. '+t('sc_check_status'),
+      'systemctl status wazuh-agent --no-pager',
+    ];
+    script = lines.join('\n');
+    instructions = '<b>'+t('deploy_steps_title')+'</b><br>'
+      + '1. '+t('deploy_linux_step1')+'<br>'
+      + '2. '+t('deploy_rpm_step2');
+
+  } else if(_deployOS === 'velo'){
+    var veloIP = ip;
+    if(_veloOS === 'win'){
+      var lines = [
+        '# 1. '+t('sc_download')+' (PowerShell)',
+        'Invoke-WebRequest -Uri http://' + veloIP + ':8082/downloads/velociraptor_client.msi `',
+        '    -OutFile $env:tmp\\velociraptor.msi',
+        '',
+        '# 2. '+t('sc_install'),
+        'msiexec.exe /i $env:tmp\\velociraptor.msi /q',
+        '',
+        '# 3. '+t('sc_check_status'),
+        'Get-Service -Name "velociraptor"',
+      ];
+      script = lines.join('\n');
+      instructions = '<b>'+t('deploy_steps_title')+'</b><br>'
+        + '1. '+t('deploy_velo_win_step1')+'<br>'
+        + '2. '+t('deploy_linux_step1');
+    } else if(_veloOS === 'deb' || _veloOS === 'rpm'){
+      var lines = [
+        '# 1. '+t('sc_download'),
+        'curl -o /tmp/velociraptor_client http://' + veloIP + ':8082/downloads/velociraptor_client_linux -L',
+        '',
+        '# 2. '+t('sc_install'),
+        'sudo install -m 755 /tmp/velociraptor_client /usr/local/bin/velociraptor_client',
+        '',
+        '# 3. '+t('sc_enable_start'),
+        'sudo bash -c \'cat > /etc/systemd/system/velociraptor_client.service << EOF',
+        '[Unit]',
+        'Description=Velociraptor Client',
+        'After=network.target',
+        '[Service]',
+        'ExecStart=/usr/local/bin/velociraptor_client client -v',
+        'Restart=always',
+        'RestartSec=5',
+        '[Install]',
+        'WantedBy=multi-user.target',
+        'EOF\'',
+        'sudo systemctl daemon-reload',
+        'sudo systemctl enable velociraptor_client',
+        'sudo systemctl start velociraptor_client',
+        '',
+        '# 4. '+t('sc_check_status'),
+        'systemctl status velociraptor_client --no-pager',
+      ];
+      script = lines.join('\n');
+      instructions = '<b>'+t('deploy_steps_title')+'</b><br>'
+        + '1. '+t('deploy_linux_step1')+'<br>'
+        + '2. '+t('deploy_deb_step2');
+    }
+  }
+
+  document.getElementById('deploy-script').textContent = script;
+  document.getElementById('deploy-instructions').innerHTML = instructions;
+}
+
+function copyDeployScript(){
+  var text = document.getElementById('deploy-script').textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var btn = document.getElementById('deploy-copy-btn');
+    btn.textContent = '✅ '+t('btn_copied');
+    setTimeout(function(){ btn.textContent = '📋 '+t('btn_copy'); }, 2000);
+  });
+}
+
+document.getElementById('deploy-modal').addEventListener('click', function(e){
+  if(e.target === this) closeDeployModal();
+});
+
+// Boot
+applyTranslations();
+refreshAll();
+setInterval(refreshAll,60000);
+</script>
+<div id="pb-global-tip"></div>
+<script>
+let _patternMeta = null;
+fetch('/api/pattern-meta', {credentials:'include'}).then(r=>r.json()).then(d=>{ _patternMeta=d; });
+(function(){
+  const tip = document.getElementById('pb-global-tip');
+  function showTip(cell){
+    if(!_patternMeta) return;
+    const meta = _patternMeta[cell.dataset.pbTrigger];
+    if(!meta){ tip.style.display='none'; return; }
+    let html='';
+    const descKey='pb_desc_'+cell.dataset.pbTrigger; const descVal=t(descKey); const desc=descVal===descKey?meta.desc:descVal;
+    if(meta.mitre) html+=`<div class="pb-tip-row"><span class="pb-tip-lbl">MITRE</span><span class="pb-tip-val amber">${meta.mitre}</span></div>`;
+    if(desc)  html+=`<div class="pb-tip-row"><span class="pb-tip-lbl">${t('lbl_desc')||'Aprašas'}</span><span class="pb-tip-procs" style="color:var(--text)">${desc}</span></div>`;
+    if(meta.procs&&meta.procs.length) html+=`<div class="pb-tip-row" style="flex-direction:column;gap:3px"><span class="pb-tip-lbl">${t('lbl_procs')||'Procesai'}</span><span class="pb-tip-procs">${meta.procs.join(' → ')}</span></div>`;
+    if(!html){ tip.style.display='none'; return; }
+    tip.innerHTML=html;
+    tip.style.display='block';
+    const r=cell.getBoundingClientRect();
+    const th=tip.offsetHeight, tw=tip.offsetWidth;
+    let top=r.top-th-8; if(top<8) top=r.bottom+8;
+    let left=r.left; if(left+tw>window.innerWidth-8) left=window.innerWidth-tw-8;
+    tip.style.top=top+'px'; tip.style.left=left+'px';
+  }
+  document.addEventListener('mouseover', function(e){
+    const cell = e.target.closest('[data-pb-trigger]');
+    if(cell) showTip(cell); else tip.style.display='none';
+  });
+})();
+</script>
+
+
+<script>
+// ── Chat helpers ───────────────────────────────────────────────────────────
+const _chatSessions = {advisor: [], forensics: []};
+const _chatExpiry   = {advisor: 0,  forensics: 0};
+const CHAT_TTL = 600_000; // 10 min
+
+function _appendMsg(containerId, role, html){
+  const c = document.getElementById(containerId);
+  const d = document.createElement('div');
+  d.className = 'chat-bubble ' + role;
+  d.innerHTML = html;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+  return d;
+}
+function _removeMsg(el){ if(el && el.parentNode) el.parentNode.removeChild(el); }
+function _setEnabled(btnId, on){ document.getElementById(btnId).disabled = !on; }
+
+function _sessionValid(key){
+  return Date.now() < _chatExpiry[key];
+}
+function _touchSession(key){
+  _chatExpiry[key] = Date.now() + CHAT_TTL;
+}
+function _clearSessionIfExpired(key){
+  if(!_sessionValid(key)){
+    _chatSessions[key] = [];
+    document.getElementById(key==='advisor'?'advisor-msgs':'forensics-msgs').innerHTML='';
+  }
+}
+
+// ── LLM Patarėjas ──────────────────────────────────────────────────────────
+function clearAdvisorChat(){
+  _chatSessions.advisor=[]; _chatExpiry.advisor=0;
+  document.getElementById('advisor-msgs').innerHTML='';
+}
+
+async function sendAdvisor(){
+  _clearSessionIfExpired('advisor');
+  const inp = document.getElementById('advisor-input');
+  const q = inp.value.trim();
+  if(!q) return;
+  inp.value='';
+  _setEnabled('advisor-send-btn', false);
+
+  _appendMsg('advisor-msgs','user', escHtml(q));
+  const thinking = _appendMsg('advisor-msgs','thinking', t('chat_thinking')||'⏳ Analizuoju...');
+
+  try {
+    const res = await fetch('/api/llm-advisor', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question: q, history: _chatSessions.advisor, lang: localStorage.getItem('shq_lang')||'lt'})
+    });
+    const data = await res.json();
+    _removeMsg(thinking);
+    if(data.error){
+      _appendMsg('advisor-msgs','system','❌ '+escHtml(data.error));
+    } else {
+      _appendMsg('advisor-msgs','bot', markdownToHtml(data.answer));
+      _chatSessions.advisor = data.history || [];
+      _touchSession('advisor');
+    }
+  } catch(e){
+    _removeMsg(thinking);
+    _appendMsg('advisor-msgs','system','❌ '+escHtml(e.message));
+  }
+  _setEnabled('advisor-send-btn', true);
+  inp.focus();
+}
+
+// ── LLM Forenzikai ─────────────────────────────────────────────────────────
+let _forensicsPending = null; // {artifacts:[{name,desc}], question}
+let _forensicsAgent   = null; // {client_id, hostname} — aktyvus agentas
+
+function _setForensicsAgent(client_id, hostname){
+  if(!client_id || !hostname) return;
+  _forensicsAgent = {client_id, hostname};
+  const bar = document.getElementById('forensics-agent-bar');
+  const lbl = document.getElementById('forensics-agent-label');
+  lbl.textContent = hostname;
+  bar.style.display = 'flex';
+}
+
+function clearForensicsAgent(){
+  _forensicsAgent = null;
+  document.getElementById('forensics-agent-bar').style.display = 'none';
+}
+
+function clearForensicsChat(){
+  _chatSessions.forensics=[]; _chatExpiry.forensics=0;
+  _forensicsPending=null; clearForensicsAgent();
+  document.getElementById('forensics-msgs').innerHTML='';
+}
+
+async function sendForensics(){
+  _clearSessionIfExpired('forensics');
+
+  // If waiting for artifact selection
+  if(_forensicsPending){
+    const inp = document.getElementById('forensics-input');
+    const sel = inp.value.trim().toLowerCase();
+    inp.value='';
+    if(!sel) return;
+
+    let selected = [];
+    const arts = _forensicsPending.artifacts;
+    if(sel==='all'||sel==='visi'||sel==='visus'){
+      selected = arts.map(a=>a.name);
+    } else {
+      const nums = sel.match(/\d+/g)||[];
+      selected = nums.map(n=>parseInt(n)-1).filter(i=>i>=0&&i<arts.length).map(i=>arts[i].name);
+    }
+    if(!selected.length){
+      _appendMsg('forensics-msgs','system','❓ '+(t('forensics_invalid_sel')||'Netinkamas pasirinkimas'));
+      return;
+    }
+
+    const q = _forensicsPending.question;
+    _forensicsPending = null;
+    _setEnabled('forensics-send-btn', false);
+
+    const collecting = _appendMsg('forensics-msgs','thinking',
+      '⏳ '+(t('forensics_collecting')||'Renkama informacija iš agento...')+' ('+selected.join(', ')+')');
+
+    try {
+      const res = await fetch('/api/llm-forensics/collect', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          question:  q,
+          artifacts: selected,
+          history:   _chatSessions.forensics,
+          lang:      localStorage.getItem('shq_lang')||'lt',
+          agent_id:  _forensicsAgent ? _forensicsAgent.client_id : null,
+          hostname:  _forensicsAgent ? _forensicsAgent.hostname  : null,
+        })
+      });
+      const data = await res.json();
+      _removeMsg(collecting);
+      if(data.error){
+        _appendMsg('forensics-msgs','system','❌ '+escHtml(data.error));
+      } else {
+        _appendMsg('forensics-msgs','bot', markdownToHtml(data.answer));
+        _chatSessions.forensics = data.history || [];
+        _touchSession('forensics');
+      }
+    } catch(e){
+      _removeMsg(collecting);
+      _appendMsg('forensics-msgs','system','❌ '+escHtml(e.message));
+    }
+    _setEnabled('forensics-send-btn', true);
+    return;
+  }
+
+  // Normal question → search artifacts
+  const inp = document.getElementById('forensics-input');
+  const q = inp.value.trim();
+  if(!q) return;
+  inp.value='';
+  _setEnabled('forensics-send-btn', false);
+
+  _appendMsg('forensics-msgs','user', escHtml(q));
+  const searching = _appendMsg('forensics-msgs','thinking',
+    '🔍 '+(t('forensics_searching')||'Ieškau Velociraptor artifacts...'));
+
+  try {
+    const res = await fetch('/api/llm-forensics/search', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        question: q,
+        history:  _chatSessions.forensics,
+        lang:     localStorage.getItem('shq_lang')||'lt',
+        agent_id: _forensicsAgent ? _forensicsAgent.client_id : null,
+        hostname: _forensicsAgent ? _forensicsAgent.hostname  : null,
+      })
+    });
+    const data = await res.json();
+    _removeMsg(searching);
+
+    if(data.error){
+      _appendMsg('forensics-msgs','system','❌ '+escHtml(data.error));
+      _setEnabled('forensics-send-btn', true);
+      return;
+    }
+    if(data.redirect_hint){
+      _appendMsg('forensics-msgs','bot', markdownToHtml('💬 '+data.redirect_hint));
+      _setEnabled('forensics-send-btn', true);
+      return;
+    }
+    if(!data.artifacts||!data.artifacts.length){
+      _appendMsg('forensics-msgs','system',
+        '❌ '+(t('forensics_not_found')||'Nerasta tinkamų artifacts. Pabandyk kitą klausimą.'));
+      _setEnabled('forensics-send-btn', true);
+      return;
+    }
+
+    // Save agent context for future queries
+    if(data.client_id && data.hostname) _setForensicsAgent(data.client_id, data.hostname);
+
+    // Show artifact selection
+    _forensicsPending = {artifacts: data.artifacts, question: q};
+    let html = '<b>📦 '+(t('forensics_found')||'Radau artifacts')+':</b><div class="artifact-list">';
+    data.artifacts.forEach((a,i)=>{
+      const desc = (a.description||'').trim();
+      const lines = desc ? desc.split('\n') : [];
+      const preview = escHtml(lines.slice(0,2).join('\n'));
+      const rest    = lines.length > 2 ? escHtml(lines.slice(2).join('\n')) : '';
+      const descHtml = desc
+        ? `<br><span class="art-desc">${preview}${rest
+            ? `<span id="art-more-${i}" style="display:none;white-space:pre-wrap">\n${rest}</span>
+               <span class="art-more-btn" onclick="
+                 var m=document.getElementById('art-more-${i}');
+                 var shown=m.style.display!=='none';
+                 m.style.display=shown?'none':'block';
+                 this.textContent=shown?'▼ more':'▲ less';
+               "> ▼ more</span>`
+            : ''
+          }</span>`
+        : '';
+      html += `<div class="artifact-item">
+        <input type="checkbox" id="art-${i}">
+        <label for="art-${i}"><span class="art-name">${escHtml(a.name)}</span>${descHtml}</label></div>`;
+    });
+    html += '</div>';
+    html += `<div style="font-size:12px;color:var(--muted);margin-top:4px">`+
+            (t('forensics_select_hint')||
+             '⬆️ Pasirink artifacts ir spausk Rinkti, arba įvesk numerius (1, 1,3, all)')+
+            `</div>`;
+    html += `<div style="display:flex;gap:8px;margin-top:6px">`;
+    html += `<button class="artifact-collect-btn" onclick="collectChecked()">`+
+            (t('btn_collect')||'⚡ Rinkti pasirinktus')+`</button>`;
+    html += `<button onclick="cancelForensics()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer">`+
+            (t('btn_cancel')||'✕ Atšaukti')+`</button>`;
+    html += `</div>`;
+    _appendMsg('forensics-msgs','system', html);
+
+  } catch(e){
+    _removeMsg(searching);
+    _appendMsg('forensics-msgs','system','❌ '+escHtml(e.message));
+  }
+  _setEnabled('forensics-send-btn', true);
+  inp.focus();
+}
+
+function collectChecked(){
+  if(!_forensicsPending) return;
+  const arts = _forensicsPending.artifacts;
+  const nums = [];
+  arts.forEach((_,i)=>{
+    const cb = document.getElementById('art-'+i);
+    if(cb && cb.checked) nums.push(i+1);
+  });
+  if(!nums.length){
+    _appendMsg('forensics-msgs','system',
+      '⚠️ '+(t('forensics_select_one')||'Pasirink bent vieną artifact arba spausk Atšaukti.'));
+    return;
+  }
+  document.getElementById('forensics-input').value = nums.join(',');
+  sendForensics();
+}
+
+function cancelForensics(){
+  _forensicsPending = null;
+  _appendMsg('forensics-msgs','system',
+    '↩️ '+(t('forensics_cancelled')||'Atšaukta.'));
+  document.getElementById('forensics-send-btn').disabled = false;
+}
+
+// ── Markdown to HTML (simple) ──────────────────────────────────────────────
+function markdownToHtml(md){
+  if(!md) return '';
+  const a = 'color:var(--accent);word-break:break-all';
+  // 1. escape HTML
+  let s = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // 2. markdown links [text](url) → <a>  (before bare-URL pass)
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+      (_,txt,url)=>`<a href="${url}" target="_blank" rel="noopener noreferrer" style="${a}">${txt}</a>`);
+  // 3. bare URLs not already inside href="..."
+  s = s.replace(/(?<!href=")(https?:\/\/[^\s<>")\]]+)/g,
+      url=>`<a href="${url}" target="_blank" rel="noopener noreferrer" style="${a}">${url}</a>`);
+  // 4. bold / italic / code / newlines
+  return s
+    .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+    .replace(/\*(.+?)\*/g,'<i>$1</i>')
+    .replace(/`(.+?)`/g,'<code style="background:var(--bg2);padding:1px 4px;border-radius:3px">$1</code>')
+    .replace(/\n/g,'<br>');
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

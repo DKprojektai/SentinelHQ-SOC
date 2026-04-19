@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html id="html-root" lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>SentinelHQ · Login</title>
+<style>
+  :root{--bg:#0d0f14;--bg2:#13161e;--border:#252a38;--text:#c8cedd;--muted:#5a6176;--accent:#4f9cf9;--red:#ef4444;--font:'JetBrains Mono','Fira Mono',monospace;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .wrap{display:flex;align-items:center;gap:72px;padding:24px;}
+  .brand-side{display:flex;flex-direction:column;align-items:center;gap:28px;}
+  .brand-side svg{filter:drop-shadow(0 0 32px rgba(0,180,255,.35));}
+  .brand-name{font-size:38px;font-weight:700;color:var(--accent);letter-spacing:.06em;text-align:center;}
+  .brand-org{font-size:12px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-top:-18px;}
+  .brand-tagline{font-size:11px;color:var(--muted);letter-spacing:.06em;text-align:center;line-height:1.8;border-top:1px solid var(--border);padding-top:20px;width:100%;}
+  .divider{width:1px;height:280px;background:linear-gradient(to bottom,transparent,var(--border),transparent);}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:320px;}
+  .card-title{font-size:13px;color:var(--muted);font-weight:400;margin-bottom:28px;}
+  label{display:block;font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:13px;padding:10px 12px;margin-bottom:16px;transition:border-color .15s;}
+  input:focus{outline:none;border-color:var(--accent);}
+  .error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:10px 12px;color:var(--red);font-size:12px;margin-bottom:16px;}
+  button[type=submit]{width:100%;background:rgba(79,156,249,.12);color:var(--accent);border:1px solid rgba(79,156,249,.3);border-radius:6px;padding:11px;font-family:var(--font);font-size:13px;cursor:pointer;transition:all .15s;margin-top:4px;}
+  button[type=submit]:hover{background:rgba(79,156,249,.22);}
+  .lang-row{display:flex;justify-content:flex-end;gap:6px;margin-bottom:20px;}
+  .lang-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:11px;padding:3px 8px;cursor:pointer;font-family:var(--font);}
+  .lang-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  @media(max-width:700px){.wrap{flex-direction:column;gap:32px;}.divider{display:none;}.brand-side{flex-direction:row;}.brand-name{font-size:24px;}.brand-org,.brand-tagline{display:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand-side">
+    <svg width="140" height="140" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#00d4ff"/>
+          <stop offset="100%" style="stop-color:#0066ff"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2 L28 7 L28 16 C28 22 22 27 16 30 C10 27 4 22 4 16 L4 7 Z" fill="url(#lg)"/>
+      <ellipse cx="16" cy="16" rx="6" ry="4" fill="#0a0a1a"/>
+      <circle cx="16" cy="16" r="2.5" fill="#00d4ff"/>
+      <circle cx="16" cy="16" r="1" fill="#fff"/>
+    </svg>
+    <div class="brand-name">SentinelHQ</div>
+    <div class="brand-org">{{ org }}</div>
+    <div class="brand-tagline" id="tagline"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="card">
+    <div class="lang-row">
+      <button class="lang-btn" id="btn-lt" onclick="switchLang('lt')">LT</button>
+      <button class="lang-btn" id="btn-en" onclick="switchLang('en')">EN</button>
+    </div>
+    <div class="card-title" id="lbl-title"></div>
+    {% if error == 'blocked' %}
+      <div class="error" id="lbl-error"></div>
+    {% elif error == 'account_locked' %}
+      <div class="error" id="lbl-error"></div>
+    {% elif error %}
+      <div class="error" id="lbl-error"></div>
+    {% endif %}
+    <form method="POST">
+      <input type="hidden" name="lang" id="field-lang" value="en">
+      <label id="lbl-user"></label>
+      <input type="text" name="username" autofocus autocomplete="username">
+      <label id="lbl-pass"></label>
+      <input type="password" name="password" autocomplete="current-password">
+      <button type="submit" id="btn-submit"></button>
+    </form>
+  </div>
+</div>
+<script>
+var TR = {
+  lt: {
+    tagline:  'Grėsmių aptikimas<br>Incidentų valdymas<br>Automatinis atsakas',
+    title:    'Admin prisijungimas',
+    user:     'Vartotojas',
+    pass:     'Slaptažodis',
+    submit:   '→ Prisijungti',
+    blocked:  '🚫 Jūsų IP laikinai užblokuotas. Bandykite po 30 min.',
+    locked:   '🔒 Paskyra užrakinta dėl per daug nesėkmingų bandymų. Kreipkitės į administratorių.',
+    badcreds: '✕ Neteisingas vartotojas arba slaptažodis'
+  },
+  en: {
+    tagline:  'Threat Detection<br>Incident Management<br>Automated Response',
+    title:    'Admin login',
+    user:     'Username',
+    pass:     'Password',
+    submit:   '→ Login',
+    blocked:  '🚫 Your IP is temporarily blocked. Try again in 30 min.',
+    locked:   '🔒 Account locked due to too many failed attempts. Contact administrator.',
+    badcreds: '✕ Invalid username or password'
+  }
+};
+
+var errorType = '{{ error }}';
+
+function applyLang(lang) {
+  var tr = TR[lang] || TR.en;
+  document.getElementById('html-root').lang = lang;
+  document.getElementById('tagline').innerHTML = tr.tagline;
+  document.getElementById('lbl-title').textContent = tr.title;
+  document.getElementById('lbl-user').textContent = tr.user;
+  document.getElementById('lbl-pass').textContent = tr.pass;
+  document.getElementById('btn-submit').textContent = tr.submit;
+  var errEl = document.getElementById('lbl-error');
+  if(errEl) {
+    if(errorType === 'blocked') errEl.textContent = tr.blocked;
+    else if(errorType === 'account_locked') errEl.textContent = tr.locked;
+    else errEl.textContent = tr.badcreds;
+  }
+  document.getElementById('btn-lt').classList.toggle('active', lang === 'lt');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  localStorage.setItem('shq_lang', lang);
+  document.getElementById('field-lang').value = lang;
+}
+
+function switchLang(lang) { applyLang(lang); }
+
+document.addEventListener('DOMContentLoaded', function(){
+  var lang = localStorage.getItem('shq_lang') || 'en';
+  applyLang(lang);
+});
+</script>
+</body>
+</html>

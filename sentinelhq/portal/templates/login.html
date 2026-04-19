@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ org }} · {% if lang == 'en' %}Portal{% else %}Portalas{% endif %}</title>
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root{--bg:#f4f6f9;--bg2:#fff;--border:#e2e8f0;--text:#1a1a2e;--muted:#64748b;--accent:#4f9cf9;--red:#ef4444;--font:system-ui,sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .wrap{display:flex;align-items:center;gap:72px;padding:24px;}
+  .brand-side{display:flex;flex-direction:column;align-items:center;gap:24px;}
+  .brand-side svg{filter:drop-shadow(0 0 28px rgba(0,140,255,.25));}
+  .brand-name{font-size:36px;font-weight:700;color:var(--text);letter-spacing:.04em;text-align:center;}
+  .brand-org{font-size:13px;color:var(--muted);letter-spacing:.1em;text-align:center;margin-top:-16px;}
+  .brand-tagline{font-size:12px;color:var(--muted);text-align:center;line-height:1.9;border-top:1px solid var(--border);padding-top:18px;width:100%;}
+  .divider{width:1px;height:300px;background:linear-gradient(to bottom,transparent,var(--border),transparent);}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:44px 40px;width:340px;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+  .card-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .card-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  label{display:block;font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px;}
+  input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;padding:11px 14px;margin-bottom:16px;transition:border-color .15s;}
+  input:focus{outline:none;border-color:var(--accent);}
+  .error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:11px 14px;color:var(--red);font-size:13px;margin-bottom:16px;}
+  button{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+  button:hover{opacity:.9;}
+  .footer{margin-top:20px;text-align:center;font-size:12px;color:var(--muted);}
+  @media(max-width:700px){.wrap{flex-direction:column;gap:28px;}.divider{display:none;}.brand-tagline{display:none;}.brand-name{font-size:24px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand-side">
+    <svg width="140" height="140" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lgp" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#00d4ff"/>
+          <stop offset="100%" style="stop-color:#0066ff"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 2 L28 7 L28 16 C28 22 22 27 16 30 C10 27 4 22 4 16 L4 7 Z" fill="url(#lgp)"/>
+      <ellipse cx="16" cy="16" rx="6" ry="4" fill="#0a0a1a"/>
+      <circle cx="16" cy="16" r="2.5" fill="#00d4ff"/>
+      <circle cx="16" cy="16" r="1" fill="#fff"/>
+    </svg>
+    <div class="brand-name">SentinelHQ</div>
+    <div class="brand-org">{{ org }}</div>
+    <div class="brand-tagline">
+      {% if lang == 'en' %}
+        Security Portal<br>Incident Review<br>Recommendations
+      {% else %}
+        Saugos portalas<br>Incidentų peržiūra<br>Rekomendacijos
+      {% endif %}
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="card">
+    <div class="card-title">{% if lang == 'en' %}Sign in{% else %}Prisijungimas{% endif %}</div>
+    <div class="card-sub">{% if lang == 'en' %}Enter your account credentials{% else %}Įveskite savo paskyros duomenis{% endif %}</div>
+    {% if error == 'blocked' %}
+      <div class="error">🚫 {% if lang == 'en' %}Your IP is temporarily blocked due to too many failed attempts. Try again in 30 min.{% else %}Jūsų IP laikinai užblokuotas dėl per daug nesėkmingų bandymų. Bandykite po 30 min.{% endif %}</div>
+    {% elif error == 'account_locked' %}
+      <div class="error">🔒 {% if lang == 'en' %}Account locked due to too many failed attempts. Contact your administrator.{% else %}Paskyra užrakinta dėl per daug nesėkmingų bandymų. Kreipkitės į administratorių.{% endif %}</div>
+    {% elif error %}
+      <div class="error">&#10005; {% if lang == 'en' %}Incorrect email or password{% else %}Neteisingas el. paštas arba slaptažodis{% endif %}</div>
+    {% endif %}
+    <form method="POST">
+      <label>{% if lang == 'en' %}Email{% else %}El. paštas{% endif %}</label>
+      <input type="email" name="email" autofocus autocomplete="email" placeholder="{% if lang == 'en' %}name@company.com{% else %}vardas@imonė.lt{% endif %}">
+      <label>{% if lang == 'en' %}Password{% else %}Slaptažodis{% endif %}</label>
+      <input type="password" name="password" autocomplete="current-password" placeholder="••••••••">
+      <button type="submit">{% if lang == 'en' %}Sign in &rarr;{% else %}Prisijungti &rarr;{% endif %}</button>
+    </form>
+    <div class="footer">{% if lang == 'en' %}Access provided by your security consultant{% else %}Prieigą suteikia jūsų saugumo konsultantas{% endif %}</div>
+  </div>
+</div>
+</body>
+</html>

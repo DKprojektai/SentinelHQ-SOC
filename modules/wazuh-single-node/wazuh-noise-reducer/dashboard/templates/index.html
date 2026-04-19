@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wazuh Noise Reducer</title>
+<style>
+  :root {
+    --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e29;--border:#252a38;
+    --text:#c8cedd;--muted:#5a6176;--accent:#4f9cf9;
+    --green:#3ecf8e;--amber:#f59e0b;--red:#ef4444;--purple:#a78bfa;
+    --font:'JetBrains Mono','Fira Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.6;}
+  .shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;}
+  aside{background:var(--bg2);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+  main{padding:28px 32px;overflow-x:hidden;}
+  .logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+  .logo span{display:block;font-size:15px;color:var(--accent);letter-spacing:0;margin-bottom:2px;font-weight:600;}
+  nav a{display:flex;align-items:center;gap:10px;padding:10px 18px;color:var(--muted);text-decoration:none;font-size:12px;border-left:2px solid transparent;transition:all .15s;}
+  nav a:hover{color:var(--text);background:var(--bg3);}
+  nav a.active{color:var(--accent);border-left-color:var(--accent);background:var(--bg3);}
+  .nav-section{padding:16px 18px 6px;font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px 18px;}
+  .stat-card .label{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+  .stat-card .value{font-size:28px;font-weight:600;}
+  .stat-card .sub{font-size:11px;color:var(--muted);margin-top:4px;}
+  .stat-card.accent .value{color:var(--accent);}
+  .stat-card.green .value{color:var(--green);}
+  .stat-card.amber .value{color:var(--amber);}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+  .topbar h1{font-size:18px;font-weight:600;}
+  .topbar .sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .section-hdr h2{font-size:12px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;}
+  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+  .tab{padding:8px 16px;font-size:12px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--font);margin-bottom:-1px;transition:color .15s;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{border-bottom:1px solid var(--border);}
+  th{padding:8px 12px;font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;text-align:left;font-weight:400;}
+  tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+  tbody tr:hover{background:var(--bg3);}
+  td{padding:10px 12px;font-size:12px;}
+  .score{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;min-width:36px;text-align:center;}
+  .score.high{background:rgba(239,68,68,.15);color:var(--red);}
+  .score.med{background:rgba(245,158,11,.15);color:var(--amber);}
+  .score.low{background:rgba(79,156,249,.12);color:var(--accent);}
+  .pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;text-transform:uppercase;}
+  .pill.pending{background:rgba(245,158,11,.12);color:var(--amber);}
+  .pill.approved{background:rgba(62,207,142,.12);color:var(--green);}
+  .pill.dismissed{background:rgba(90,97,118,.2);color:var(--muted);}
+  .pill.ready{background:rgba(62,207,142,.12);color:var(--green);}
+  .pill.draft{background:rgba(167,139,250,.12);color:var(--purple);}
+  .rule-desc{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);}
+  .detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-start;justify-content:flex-end;}
+  .detail-overlay.open{display:flex;}
+  .detail-panel{background:var(--bg2);border-left:1px solid var(--border);width:560px;height:100vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:18px;}
+  .detail-panel h3{font-size:14px;}
+  .detail-close{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:4px 10px;cursor:pointer;font-family:var(--font);font-size:11px;}
+  .detail-close:hover{color:var(--text);}
+  .kv-grid{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;}
+  .kv-key{color:var(--muted);font-size:11px;padding-top:2px;}
+  .kv-val{font-size:12px;word-break:break-all;}
+  .btn{padding:8px 18px;border-radius:6px;font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
+  .btn-approve{background:rgba(62,207,142,.12);color:var(--green);border-color:rgba(62,207,142,.3);}
+  .btn-approve:hover{background:rgba(62,207,142,.2);}
+  .btn-dismiss{background:var(--bg3);color:var(--muted);border-color:var(--border);}
+  .btn-dismiss:hover{color:var(--text);}
+  .btn-export{background:rgba(79,156,249,.12);color:var(--accent);border-color:rgba(79,156,249,.3);}
+  .btn-export:hover{background:rgba(79,156,249,.2);}
+  .log-sample{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--muted);word-break:break-all;white-space:pre-wrap;margin-bottom:6px;max-height:72px;overflow:hidden;}
+  .xml-block{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:11px;color:#94d4ff;white-space:pre-wrap;overflow-x:auto;}
+  textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 10px;resize:vertical;min-height:60px;}
+  textarea:focus{outline:none;border-color:var(--accent);}
+  .timeline-bars{display:flex;align-items:flex-end;gap:2px;height:48px;margin-top:6px;}
+  .t-bar{flex:1;background:var(--accent);opacity:.5;border-radius:2px 2px 0 0;min-height:2px;}
+  .empty{padding:48px;text-align:center;color:var(--muted);}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px;}
+  .card h3{font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:14px;}
+  .top-rules{list-style:none;}
+  .top-rules li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .top-rules li:last-child{border-bottom:none;}
+  .rule-id{color:var(--accent);min-width:52px;font-size:11px;}
+  .rule-cnt{color:var(--amber);min-width:40px;text-align:right;font-size:12px;font-weight:600;}
+  .filter-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;}
+  .filter-row select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:6px 10px;}
+  .filter-row select:focus{outline:none;border-color:var(--accent);}
+  code{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="logo"><span>&#9632; WNR</span>Wazuh Noise Reducer<div style="margin-top:8px;font-size:10px;color:var(--muted)">{{ username }}</div></div>
+    <div class="nav-section">Navigation</div>
+    <nav>
+      <a href="#" class="active" onclick="showPage('overview',this);return false">&#9702;&nbsp; Overview</a>
+      <a href="#" onclick="showPage('candidates',this);return false">&#9673;&nbsp; Candidates</a>
+      <a href="#" onclick="showPage('rules',this);return false">&#9650;&nbsp; Rules</a>
+      <a href="#" onclick="showPage('export',this);return false">&#8615;&nbsp; Export XML</a>
+      <a href="/logout" style="margin-top:auto">&#8594;&nbsp; Atsijungti</a>
+</nav>
+  </aside>
+  <main>
+
+    <!-- OVERVIEW -->
+    <div id="page-overview">
+      <div class="topbar">
+        <div><h1>Overview</h1><div class="sub" id="last-refresh">Loading...</div></div>
+        <button class="btn btn-export" onclick="refreshAll()">&#8635; Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card accent"><div class="label">Total alerts</div><div class="value" id="s-total">—</div><div class="sub" id="s-24h">Last 24h: —</div></div>
+        <div class="stat-card amber"><div class="label">Pending review</div><div class="value" id="s-pending">—</div><div class="sub">Noise candidates</div></div>
+        <div class="stat-card green"><div class="label">Approved rules</div><div class="value" id="s-approved">—</div><div class="sub" id="s-ready">Ready to export: —</div></div>
+        <div class="stat-card"><div class="label">Dismissed</div><div class="value" id="s-dismissed">—</div><div class="sub">Confirmed legit</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><h3>Top noisy rules (72h)</h3><ul class="top-rules" id="top-rules-list"><li><span style="color:var(--muted)">Loading...</span></li></ul></div>
+        <div class="card"><h3>Alert volume (72h)</h3><div class="timeline-bars" id="timeline-overview"></div><div style="margin-top:6px;font-size:10px;color:var(--muted)">Hourly counts</div></div>
+      </div>
+      <div class="section-hdr"><h2>High confidence noise &nbsp;<span style="color:var(--red);font-weight:600">score &ge; 75</span></h2></div>
+      <div class="table-wrap"><table><thead><tr><th>Score</th><th>Rule ID</th><th>Description</th><th>Agent</th><th>Rate/h</th><th>Count</th><th>Status</th></tr></thead><tbody id="top-candidates-body"></tbody></table></div>
+    </div>
+
+    <!-- CANDIDATES -->
+    <div id="page-candidates" style="display:none">
+      <div class="topbar"><div><h1>Noise Candidates</h1><div class="sub">Review and approve suppression rules</div></div></div>
+      <div class="filter-row">
+        <select id="filter-status" onchange="loadCandidates()"><option value="pending">Pending</option><option value="approved">Approved</option><option value="dismissed">Dismissed</option></select>
+        <select id="filter-score" onchange="loadCandidates()"><option value="0">All scores</option><option value="60">Score &ge; 60</option><option value="75">Score &ge; 75</option><option value="90">Score &ge; 90</option></select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Score</th><th>Rule ID</th><th>Description</th><th>Agent</th><th>Location</th><th>Rate/h</th><th>Count</th><th>Status</th></tr></thead><tbody id="candidates-body"></tbody></table></div>
+      <div id="cand-empty" class="empty" style="display:none">No candidates found.</div>
+    </div>
+
+    <!-- RULES -->
+    <div id="page-rules" style="display:none">
+      <div class="topbar"><div><h1>Suppression Rules</h1><div class="sub">Auto-generated Wazuh XML rules</div></div></div>
+      <div class="tabs">
+        <button class="tab active" onclick="loadRules('ready',this)">Ready</button>
+        <button class="tab" onclick="loadRules('draft',this)">Draft</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Score</th><th>Rule ID</th><th>Agent</th><th>Location</th><th>Description</th><th>Status</th><th>Created</th></tr></thead><tbody id="rules-body"></tbody></table></div>
+      <div id="rules-empty" class="empty" style="display:none">No rules yet. Approve candidates to generate rules.</div>
+    </div>
+
+    <!-- EXPORT -->
+    <div id="page-export" style="display:none">
+      <div class="topbar"><div><h1>Export XML</h1><div class="sub">Download Wazuh local_rules.xml suppression block</div></div></div>
+      <div class="card" style="max-width:620px;margin-bottom:20px"><h3>Deployment steps</h3>
+        <div style="color:var(--text);font-size:12px;line-height:2.2">
+          1. Export the file below<br>
+          2. Merge into <code>/var/ossec/etc/rules/local_rules.xml</code><br>
+          3. Restart: <code>systemctl restart wazuh-manager</code><br>
+          4. Test: <code>ossec-logtest</code>
+        </div>
+      </div>
+      <button class="btn btn-export" onclick="exportXML()" style="margin-bottom:20px">&#8615; Download local_rules.xml</button>
+      <div id="export-preview"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Detail overlay -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detail-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3 id="detail-title">Detail</h3>
+      <button class="detail-close" onclick="closeDetailDirect()">&#10005; Close</button>
+    </div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<script>
+function showPage(name,el){
+  document.querySelectorAll('[id^=page-]').forEach(p=>p.style.display='none');
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('page-'+name).style.display='block';
+  if(el)el.classList.add('active');
+  if(name==='overview')refreshAll();
+  if(name==='candidates')loadCandidates();
+  if(name==='rules')loadRules('ready');
+  if(name==='export')loadExportPreview();
+}
+
+async function refreshAll(){
+  try{
+    const r=await fetch('/api/stats');const d=await r.json();
+    document.getElementById('s-total').textContent=d.total_alerts.toLocaleString();
+    document.getElementById('s-24h').textContent='Last 24h: '+d.alerts_24h.toLocaleString();
+    document.getElementById('s-pending').textContent=d.pending;
+    document.getElementById('s-approved').textContent=d.approved;
+    document.getElementById('s-dismissed').textContent=d.dismissed;
+    document.getElementById('s-ready').textContent='Ready to export: '+d.rules_ready;
+    document.getElementById('last-refresh').textContent='Refreshed '+new Date().toLocaleTimeString();
+    const ul=document.getElementById('top-rules-list');
+    ul.innerHTML=d.top_rules.map(r=>`<li><span class="rule-id">${r.rule_id}</span><span class="rule-desc" style="flex:1">${r.rule_desc}</span><span class="rule-cnt">${r.cnt}</span></li>`).join('')||'<li><span style="color:var(--muted)">No data yet</span></li>';
+    loadTimeline('timeline-overview',null);
+    loadTopCandidates();
+  }catch(e){console.error(e);}
+}
+
+async function loadTimeline(elId,fp){
+  const url=fp?`/api/timeline?fingerprint=${fp}&hours=72`:'/api/timeline?hours=72';
+  try{
+    const r=await fetch(url);const data=await r.json();
+    const el=document.getElementById(elId);if(!el||!data.length)return;
+    const max=Math.max(...data.map(d=>d.cnt),1);
+    el.innerHTML=data.map(d=>`<div class="t-bar" style="height:${Math.max(2,Math.round(d.cnt/max*48))}px" title="${d.hour}: ${d.cnt}"></div>`).join('');
+  }catch(e){}
+}
+
+async function loadTopCandidates(){
+  const r=await fetch('/api/candidates?status=pending&min_score=75&limit=8');
+  const d=await r.json();renderCandRows(document.getElementById('top-candidates-body'),d.items);
+}
+
+async function loadCandidates(){
+  const status=document.getElementById('filter-status').value;
+  const score=document.getElementById('filter-score').value;
+  const r=await fetch(`/api/candidates?status=${status}&min_score=${score}&limit=200`);
+  const d=await r.json();
+  renderCandRows(document.getElementById('candidates-body'),d.items);
+  document.getElementById('cand-empty').style.display=d.items.length?'none':'block';
+}
+
+function renderCandRows(tbody,items){
+  tbody.innerHTML=items.map(c=>`<tr onclick="openDetail('${c.fingerprint}')">
+    <td>${scoreBadge(c.noise_score)}</td>
+    <td style="font-family:var(--font)">${c.rule_id}</td>
+    <td><div class="rule-desc">${c.rule_desc}</div></td>
+    <td>${c.agent_name||c.agent_id}</td>
+    <td style="color:var(--muted)">${(c.location||'').slice(0,28)}</td>
+    <td style="color:var(--amber)">${c.hourly_rate}</td>
+    <td>${c.occurrence_count.toLocaleString()}</td>
+    <td><span class="pill ${c.status}">${c.status}</span></td>
+  </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">No items</td></tr>';
+}
+
+function scoreBadge(s){const cls=s>=75?'high':s>=50?'med':'low';return `<span class="score ${cls}">${s}</span>`;}
+
+async function loadRules(status,tabEl){
+  if(tabEl){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tabEl.classList.add('active');}
+  const r=await fetch(`/api/rules?status=${status}`);const d=await r.json();
+  const tbody=document.getElementById('rules-body');
+  tbody.innerHTML=d.items.map(r=>`<tr onclick="showRuleXML(${r.id})">
+    <td>${scoreBadge(r.noise_score)}</td><td style="font-family:var(--font)">${r.rule_id}</td>
+    <td>${r.agent_name||'—'}</td><td style="color:var(--muted)">${(r.location||'—').slice(0,28)}</td>
+    <td><div class="rule-desc">${r.rule_desc}</div></td>
+    <td><span class="pill ${r.status}">${r.status}</span></td>
+    <td style="color:var(--muted)">${(r.created_at||'').slice(0,16)}</td>
+  </tr>`).join('');
+  document.getElementById('rules-empty').style.display=d.items.length?'none':'block';
+}
+
+async function showRuleXML(id){
+  const r=await fetch(`/api/rules/${id}/xml`);const txt=await r.text();
+  document.getElementById('detail-title').textContent='Wazuh Rule XML';
+  document.getElementById('detail-body').innerHTML=`<div class="xml-block">${esc(txt)}</div>`;
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+async function loadExportPreview(){
+  const r=await fetch('/api/rules?status=ready');const d=await r.json();
+  const el=document.getElementById('export-preview');
+  if(!d.items.length){el.innerHTML='<div class="empty">No ready rules. Approve candidates first.</div>';return;}
+  el.innerHTML=`<div style="color:var(--muted);margin-bottom:10px;font-size:11px">${d.items.length} rules ready</div>`
+    +d.items.slice(0,3).map(r=>`<div class="xml-block" style="margin-bottom:10px">${esc(r.wazuh_xml)}</div>`).join('')
+    +(d.items.length>3?`<div style="color:var(--muted);font-size:11px">... and ${d.items.length-3} more</div>`:'');
+}
+
+function exportXML(){window.location.href='/api/rules/export';}
+
+async function openDetail(fp){
+  document.getElementById('detail-title').textContent='Loading...';
+  document.getElementById('detail-body').innerHTML='';
+  document.getElementById('detail-overlay').classList.add('open');
+  const r=await fetch(`/api/candidates/${fp}`);const d=await r.json();
+  const c=d.candidate;const tid='tl-'+fp.slice(0,8);
+  document.getElementById('detail-title').textContent=`Rule ${c.rule_id} · ${c.agent_name||c.agent_id}`;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="kv-grid">
+      <div class="kv-key">Fingerprint</div><div class="kv-val" style="font-size:10px">${c.fingerprint}</div>
+      <div class="kv-key">Rule ID</div><div class="kv-val">${c.rule_id}</div>
+      <div class="kv-key">Description</div><div class="kv-val">${c.rule_desc}</div>
+      <div class="kv-key">Agent</div><div class="kv-val">${c.agent_name} (${c.agent_id})</div>
+      <div class="kv-key">Location</div><div class="kv-val">${c.location||'—'}</div>
+      <div class="kv-key">Noise score</div><div class="kv-val">${scoreBadge(c.noise_score)}</div>
+      <div class="kv-key">Rate / hour</div><div class="kv-val" style="color:var(--amber)">${c.hourly_rate}</div>
+      <div class="kv-key">Count</div><div class="kv-val">${c.occurrence_count.toLocaleString()}</div>
+      <div class="kv-key">First seen</div><div class="kv-val">${(c.first_seen||'').slice(0,16)}</div>
+      <div class="kv-key">Status</div><div class="kv-val"><span class="pill ${c.status}">${c.status}</span></div>
+    </div>
+    <div><div style="font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Volume (72h)</div><div class="timeline-bars" id="${tid}"></div></div>
+    <div><div style="font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Recent log samples</div>
+      ${(d.samples||[]).slice(0,4).map(s=>`<div class="log-sample">${esc(s.full_log||'(no log)')}</div>`).join('')}
+    </div>
+    ${d.rule?`<div><div style="font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Generated XML</div><div class="xml-block">${esc(d.rule.wazuh_xml)}</div></div>`:''}
+    ${c.status==='pending'?`
+    <div><div style="font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Notes</div>
+    <textarea id="review-notes" placeholder="Optional notes...">${c.notes||''}</textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-approve" onclick="review('${fp}','approve')">&#10003; Approve – suppress</button>
+      <button class="btn btn-dismiss" onclick="review('${fp}','dismiss')">&#10005; Dismiss – it's real</button>
+    </div>`:`<div style="color:var(--muted);font-size:12px">Reviewed: <span class="pill ${c.status}">${c.status}</span>${c.notes?' · '+c.notes:''}</div>`}
+  `;
+  loadTimeline(tid,fp);
+}
+
+async function review(fp,action){
+  const notes=(document.getElementById('review-notes')||{}).value||'';
+  await fetch(`/api/candidates/${fp}/review`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,notes})});
+  closeDetailDirect();loadCandidates();refreshAll();
+}
+
+function closeDetail(e){if(e.target===document.getElementById('detail-overlay'))closeDetailDirect();}
+function closeDetailDirect(){document.getElementById('detail-overlay').classList.remove('open');}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+refreshAll();
+setInterval(refreshAll,60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  collector:
+    build: ./collector
+    container_name: wnr-collector
+    restart: unless-stopped
+    environment:
+      - OPENSEARCH_URL=${OPENSEARCH_URL:-https://wazuh.indexer:9200}
+      - OPENSEARCH_USER=${OPENSEARCH_USER:-admin}
+      - OPENSEARCH_PASS=${OPENSEARCH_PASS:-SecretPassword}
+      - OPENSEARCH_INDEX=${OPENSEARCH_INDEX:-wazuh-alerts-*}
+      - WAZUH_VERIFY_SSL=${WAZUH_VERIFY_SSL:-false}
+      - COLLECT_INTERVAL_SECONDS=${COLLECT_INTERVAL_SECONDS:-120}
+      - DB_PATH=/data/alerts.db
+    volumes:
+      - wnr-data:/data
+    networks:
+      - wnr-net
+      - wazuh-net
+
+  analyzer:
+    build: ./analyzer
+    container_name: wnr-analyzer
+    restart: unless-stopped
+    environment:
+      - DB_PATH=/data/alerts.db
+      - ANALYZE_INTERVAL_SECONDS=${ANALYZE_INTERVAL_SECONDS:-600}
+      - NOISE_THRESHOLD_HOURLY=${NOISE_THRESHOLD_HOURLY:-20}
+      - NOISE_WINDOW_HOURS=${NOISE_WINDOW_HOURS:-72}
+      - MIN_OCCURRENCES=${MIN_OCCURRENCES:-10}
+    volumes:
+      - wnr-data:/data
+    networks:
+      - wnr-net
+    depends_on:
+      - collector
+
+  dashboard:
+    build: ./dashboard
+    container_name: wnr-dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-8082}:8080"
+    environment:
+      - DB_PATH=/data/alerts.db
+      - SECRET_KEY=${SECRET_KEY:-changeme-in-production}
+      - DASHBOARD_USER=${DASHBOARD_USER:-admin}
+      - DASHBOARD_PASS=${DASHBOARD_PASS:-changeme}
+    volumes:
+      - wnr-data:/data
+      - ./rules_export:/rules_export
+    networks:
+      - wnr-net
+    depends_on:
+      - analyzer
+
+volumes:
+  wnr-data:
+
+networks:
+  wnr-net:
+    driver: bridge
+  wazuh-net:
+    external: true
+    name: single-node_default

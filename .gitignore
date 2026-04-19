@@ -1,0 +1,26 @@
+﻿# Secrets
+.env
+*.key
+*.pem
+*.crt
+sentinelhq_api.yaml
+config/
+license_generator.py
+license_private.pem
+
+# Runtime
+backups/
+reports/
+__pycache__/
+*.pyc
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Wazuh data (too large)
+modules/wazuh-single-node/multi-node/
+
+# PyArmor obfuscated build output (developer only)
+protected/

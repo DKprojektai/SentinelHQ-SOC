@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>{{ org }} · MFA</title>
+<style>
+  :root{--bg:#f4f6f9;--bg2:#fff;--border:#e2e8f0;--text:#1a1a2e;--muted:#64748b;--accent:#4f9cf9;--red:#ef4444;--font:system-ui,sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:44px 40px;width:360px;box-shadow:0 4px 24px rgba(0,0,0,.06);text-align:center;}
+  .icon{font-size:40px;margin-bottom:16px;}
+  h2{font-size:18px;font-weight:700;margin-bottom:6px;}
+  p{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:11px;color:var(--red);font-size:13px;margin-bottom:16px;}
+  input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:24px;padding:12px;margin-bottom:16px;text-align:center;letter-spacing:.2em;}
+  input:focus{outline:none;border-color:var(--accent);}
+  button{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;}
+  a{display:block;margin-top:16px;font-size:12px;color:var(--muted);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🔐</div>
+  <h2>{% if lang == 'en' %}Two-factor authentication{% else %}Dviejų veiksnių autentikacija{% endif %}</h2>
+  <p>{% if lang == 'en' %}Enter the code from your Google Authenticator app{% else %}Įvesk kodą iš Google Authenticator programėlės{% endif %}</p>
+  {% if error == "blocked" %}
+    <div class="error">&#128683; {% if lang == 'en' %}Too many failed attempts — IP blocked. Try again in 30 min.{% else %}Per daug nesėkmingų bandymų — IP užblokuotas. Bandykite po 30 min.{% endif %}</div>
+  {% elif error %}
+    <div class="error">&#10005; {% if lang == 'en' %}Invalid code{% else %}Neteisingas kodas{% endif %}</div>
+  {% endif %}
+  <form method="POST">
+    <input type="text" name="code" maxlength="6" pattern="[0-9]{6}"
+           inputmode="numeric" autofocus autocomplete="one-time-code" placeholder="000000">
+    <button type="submit">{% if lang == 'en' %}Confirm &rarr;{% else %}Patvirtinti &rarr;{% endif %}</button>
+  </form>
+  <a href="/logout">&#8592; {% if lang == 'en' %}Back{% else %}Grįžti{% endif %}</a>
+</div>
+</body>
+</html>

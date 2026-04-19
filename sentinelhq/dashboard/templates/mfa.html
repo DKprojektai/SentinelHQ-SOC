@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>SentinelHQ · MFA</title>
+<style>
+  :root{--bg:#0d0f14;--bg2:#13161e;--border:#252a38;--text:#c8cedd;--muted:#5a6176;--accent:#4f9cf9;--red:#ef4444;--green:#3ecf8e;--font:'JetBrains Mono','Fira Mono',monospace;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:340px;text-align:center;}
+  .icon{font-size:32px;margin-bottom:16px;}
+  h2{font-size:15px;margin-bottom:6px;}
+  p{font-size:12px;color:var(--muted);margin-bottom:24px;}
+  .error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:10px;color:var(--red);font-size:12px;margin-bottom:16px;}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:20px;padding:12px;margin-bottom:16px;text-align:center;letter-spacing:.2em;}
+  input:focus{outline:none;border-color:var(--accent);}
+  button{width:100%;background:rgba(79,156,249,.12);color:var(--accent);border:1px solid rgba(79,156,249,.3);border-radius:6px;padding:11px;font-family:var(--font);font-size:13px;cursor:pointer;}
+  button:hover{background:rgba(79,156,249,.22);}
+  a{display:block;margin-top:16px;font-size:11px;color:var(--muted);text-decoration:none;}
+  a:hover{color:var(--text);}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🔐</div>
+  <h2 id="mfa-title"></h2>
+  <p id="mfa-desc"></p>
+  {% if error == "blocked" %}<div class="error" id="mfa-error"></div>
+  {% elif error %}<div class="error" id="mfa-error"></div>{% endif %}
+  <form method="POST">
+    <input type="text" name="code" maxlength="6" pattern="[0-9]{6}"
+           inputmode="numeric" autofocus autocomplete="one-time-code" placeholder="000000">
+    <button type="submit" id="mfa-btn"></button>
+  </form>
+  <a href="/logout" id="mfa-back"></a>
+</div>
+<script>
+var TR = {
+  lt: {
+    title:   'Dviejų veiksnių autentikacija',
+    desc:    'Įvesk 6 skaitmenų kodą iš Google Authenticator',
+    btn:     '→ Patvirtinti',
+    back:    '← Grįžti į prisijungimą',
+    blocked: '🚫 Per daug nesėkmingų bandymų — IP užblokuotas. Bandykite po 30 min.',
+    badcode: '✕ Neteisingas kodas'
+  },
+  en: {
+    title:   'Two-factor authentication',
+    desc:    'Enter the 6-digit code from Google Authenticator',
+    btn:     '→ Verify',
+    back:    '← Back to login',
+    blocked: '🚫 Too many failed attempts — IP blocked. Try again in 30 min.',
+    badcode: '✕ Invalid code'
+  }
+};
+var errorType = '{{ error }}';
+document.addEventListener('DOMContentLoaded', function(){
+  var lang = localStorage.getItem('shq_lang') || 'en';
+  var tr = TR[lang] || TR.en;
+  document.getElementById('mfa-title').textContent = tr.title;
+  document.getElementById('mfa-desc').textContent = tr.desc;
+  document.getElementById('mfa-btn').textContent = tr.btn;
+  document.getElementById('mfa-back').textContent = tr.back;
+  var errEl = document.getElementById('mfa-error');
+  if(errEl) errEl.textContent = errorType === 'blocked' ? tr.blocked : tr.badcode;
+});
+</script>
+</body>
+</html>
