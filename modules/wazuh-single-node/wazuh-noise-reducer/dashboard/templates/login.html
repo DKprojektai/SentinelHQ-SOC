@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WNR · Login</title>
+<style>
+  :root {
+    --bg:#0d0f14;--bg2:#13161e;--border:#252a38;
+    --text:#c8cedd;--muted:#5a6176;--accent:#4f9cf9;--red:#ef4444;
+    --font:'JetBrains Mono','Fira Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:340px;}
+  .logo{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  .logo span{display:block;font-size:20px;color:var(--accent);letter-spacing:0;margin-bottom:4px;font-weight:600;}
+  h2{font-size:13px;color:var(--muted);font-weight:400;margin-bottom:28px;}
+  label{display:block;font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+  input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:13px;padding:10px 12px;margin-bottom:16px;transition:border-color .15s;}
+  input:focus{outline:none;border-color:var(--accent);}
+  .error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:10px 12px;color:var(--red);font-size:12px;margin-bottom:16px;}
+  button{width:100%;background:rgba(79,156,249,.12);color:var(--accent);border:1px solid rgba(79,156,249,.3);border-radius:6px;padding:11px;font-family:var(--font);font-size:13px;cursor:pointer;transition:all .15s;margin-top:4px;}
+  button:hover{background:rgba(79,156,249,.22);}
+  button:active{transform:scale(0.98);}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><span>&#9632; WNR</span>Wazuh Noise Reducer</div>
+  <h2>Prisijungimas</h2>
+  {% if error %}
+  <div class="error">&#10005; Neteisingas vartotojas arba slaptažodis</div>
+  {% endif %}
+  <form method="POST" action="/login">
+    <label>Vartotojas</label>
+    <input type="text" name="username" autofocus autocomplete="username" placeholder="admin">
+    <label>Slaptažodis</label>
+    <input type="password" name="password" autocomplete="current-password" placeholder="••••••••">
+    <button type="submit">&#8594; Prisijungti</button>
+  </form>
+</div>
+</body>
+</html>

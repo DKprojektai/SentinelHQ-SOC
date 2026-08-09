@@ -1,0 +1,27 @@
+services:
+  velociraptor:
+    container_name: velociraptor
+    # Must match VELOX_FRONTEND_HOSTNAME: the server's internal gRPC API connection
+    # dials Frontend.hostname (VelociraptorServer); without this the name doesn't
+    # resolve in-container -> GUI 503 "GetUserUITraits" (server.config api_connection
+    # lookup VelociraptorServer fails).
+    hostname: VelociraptorServer
+    # Build locally to pin Velociraptor v0.76.5 (Dockerfile fetches releases/tags/v0.76.5).
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: ["/velociraptor/entrypoint-patched.sh"]
+    volumes:
+      - ./velociraptor:/velociraptor/:rw
+      - ./entrypoint-patched.sh:/velociraptor/entrypoint-patched.sh:ro
+    environment:
+      - VELOX_USER=${VELOX_USER}
+      - VELOX_PASSWORD=${VELOX_PASSWORD}
+      - VELOX_ROLE=${VELOX_ROLE}
+      - VELOX_SERVER_URL=${VELOX_SERVER_URL}
+      - VELOX_FRONTEND_HOSTNAME=${VELOX_FRONTEND_HOSTNAME}
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8889:8889"
+    restart: unless-stopped

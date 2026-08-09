@@ -1,0 +1,30 @@
+﻿# Secrets
+.env
+*.key
+*.pem
+*.crt
+sentinelhq_api.yaml
+# Root runtime config only (holds velo sentinelhq_api.yaml secret).
+# Leading slash = root-anchored; must NOT match modules/wazuh-single-node/config/
+# which ships certs.yml (without it Docker bind-mount auto-creates an empty
+# /config/certs.yml directory -> "No configuration file found").
+/config/
+license_generator.py
+license_private.pem
+
+# Runtime
+backups/
+reports/
+__pycache__/
+*.pyc
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Wazuh data (too large)
+modules/wazuh-single-node/multi-node/
+
+# PyArmor obfuscated build output (developer only)
+protected/

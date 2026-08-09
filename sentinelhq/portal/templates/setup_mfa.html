@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>{{ org }} · MFA Setup</title>
+<style>
+  :root{--bg:#f4f6f9;--bg2:#fff;--border:#e2e8f0;--text:#1a1a2e;--muted:#64748b;--accent:#3b82f6;--green:#10b981;--red:#ef4444;--font:system-ui,sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:440px;box-shadow:0 4px 24px rgba(0,0,0,.06);}
+  .logo{font-size:13px;color:var(--muted);margin-bottom:4px;}
+  .brand{font-size:20px;font-weight:700;margin-bottom:4px;}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
+  .step{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+  .qr{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;display:inline-block;margin:0 0 16px;}
+  .secret{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;letter-spacing:.08em;color:var(--accent);word-break:break-all;margin-bottom:24px;font-family:monospace;}
+  .enabled{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;color:var(--green);font-size:13px;margin-bottom:16px;font-weight:500;}
+  label{display:block;font-size:12px;font-weight:500;margin-bottom:6px;}
+  input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:22px;padding:12px;margin-bottom:16px;text-align:center;letter-spacing:.2em;font-family:monospace;}
+  input:focus{outline:none;border-color:var(--accent);}
+  .error{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:11px 14px;color:var(--red);font-size:13px;margin-bottom:16px;}
+  button{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;}
+  button:hover{opacity:.9;}
+  a{display:block;margin-top:14px;text-align:center;font-size:12px;color:var(--muted);text-decoration:none;}
+  a:hover{color:var(--text);}
+  hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">&#9632; SentinelHQ</div>
+  <div class="brand">Dviejų veiksnių apsauga</div>
+  <div class="sub">Apsaugok savo paskyrą — nuskenuok QR kodą Google Authenticator programėle.</div>
+
+  {% if enabled %}
+  <div class="enabled">&#10003; MFA jau aktyvuotas jūsų paskyroje</div>
+  {% endif %}
+
+  <div class="step">1. Nuskenuok QR kodą</div>
+  <div class="qr">
+    <img src="data:image/png;base64,{{ qr_b64 }}" width="180" height="180" alt="QR">
+  </div>
+
+  <div class="step">Arba įvesk raktą rankiniu būdu</div>
+  <div class="secret">{{ secret }}</div>
+
+  <hr>
+
+  <div class="step">2. Patvirtink kodu iš programėlės</div>
+  {% if request.args.get('error') %}
+  <div class="error">&#10005; Neteisingas kodas. Bandyk dar kartą.</div>
+  {% endif %}
+  <form method="POST">
+    <label>6 skaitmenų kodas</label>
+    <input type="text" name="code" maxlength="6" pattern="[0-9]{6}"
+           inputmode="numeric" autofocus autocomplete="one-time-code" placeholder="000000">
+    <button type="submit">&#10003; Aktyvuoti MFA</button>
+  </form>
+  <a href="/">&#8592; Grįžti į portalą</a>
+</div>
+</body>
+</html>

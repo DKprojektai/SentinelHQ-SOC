@@ -1,0 +1,127 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="100%" style="stop-color:#161b22"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1f6feb"/>
+      <stop offset="100%" style="stop-color:#388bfd"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1f6feb;stop-opacity:0.15"/>
+      <stop offset="50%" style="stop-color:#388bfd;stop-opacity:0.08"/>
+      <stop offset="100%" style="stop-color:#0d1117;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bg)"/>
+
+  <!-- Glow blob left -->
+  <ellipse cx="200" cy="150" rx="300" ry="150" fill="#1f6feb" opacity="0.07" filter="url(#blur)"/>
+
+  <!-- Grid lines subtle -->
+  <g stroke="#21262d" stroke-width="1" opacity="0.6">
+    <line x1="0" y1="60" x2="1200" y2="60"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="180" x2="1200" y2="180"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="200" y1="0" x2="200" y2="300"/>
+    <line x1="400" y1="0" x2="400" y2="300"/>
+    <line x1="600" y1="0" x2="600" y2="300"/>
+    <line x1="800" y1="0" x2="800" y2="300"/>
+    <line x1="1000" y1="0" x2="1000" y2="300"/>
+  </g>
+
+  <!-- Blue accent bar top -->
+  <rect x="0" y="0" width="1200" height="3" fill="url(#accent)"/>
+
+  <!-- Shield icon -->
+  <g transform="translate(72, 95)">
+    <path d="M55 0 L110 22 L110 66 C110 99 55 120 55 120 C55 120 0 99 0 66 L0 22 Z"
+          fill="none" stroke="#1f6feb" stroke-width="2.5" opacity="0.9"/>
+    <path d="M55 15 L95 32 L95 66 C95 88 55 105 55 105 C55 105 15 88 15 66 L15 32 Z"
+          fill="#1f6feb" opacity="0.12"/>
+    <!-- Checkmark inside shield -->
+    <polyline points="32,60 48,76 78,46" fill="none" stroke="#388bfd" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- SentinelHQ title -->
+  <text x="210" y="148" font-family="'Segoe UI', -apple-system, sans-serif" font-size="58" font-weight="700" fill="#e6edf3" letter-spacing="-1">SentinelHQ</text>
+
+  <!-- Blue underline accent -->
+  <rect x="210" y="160" width="420" height="3" fill="url(#accent)" rx="2"/>
+
+  <!-- Tagline -->
+  <text x="210" y="195" font-family="'Segoe UI', -apple-system, sans-serif" font-size="16" fill="#8b949e" letter-spacing="0.3">Powered by</text>
+  <text x="310" y="195" font-family="'Segoe UI', -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e6edf3" letter-spacing="0.3">Wazuh</text>
+  <text x="370" y="195" font-family="'Segoe UI', -apple-system, sans-serif" font-size="16" fill="#8b949e" letter-spacing="0.3">·</text>
+  <text x="385" y="195" font-family="'Segoe UI', -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e6edf3" letter-spacing="0.3">Velociraptor</text>
+  <text x="505" y="195" font-family="'Segoe UI', -apple-system, sans-serif" font-size="16" fill="#8b949e" letter-spacing="0.3">· Any OpenAI-compatible LLM</text>
+
+  <!-- Right side: stats/features -->
+  <g transform="translate(740, 60)">
+
+    <!-- Feature 1 -->
+    <g transform="translate(0, 0)">
+      <rect width="200" height="50" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+      <circle cx="26" cy="25" r="14" fill="#1f6feb" opacity="0.15"/>
+      <text x="26" y="30" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#388bfd">🤖</text>
+      <text x="48" y="20" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#e6edf3">AI Alert Triage</text>
+      <text x="48" y="36" font-family="'Segoe UI', sans-serif" font-size="11" fill="#8b949e">True/False/Uncertain</text>
+    </g>
+
+    <!-- Feature 2 -->
+    <g transform="translate(215, 0)">
+      <rect width="200" height="50" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+      <circle cx="26" cy="25" r="14" fill="#1f6feb" opacity="0.15"/>
+      <text x="26" y="30" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#388bfd">📱</text>
+      <text x="48" y="20" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Telegram SOC</text>
+      <text x="48" y="36" font-family="'Segoe UI', sans-serif" font-size="11" fill="#8b949e">Isolate from your phone</text>
+    </g>
+
+    <!-- Feature 3 -->
+    <g transform="translate(0, 65)">
+      <rect width="200" height="50" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+      <circle cx="26" cy="25" r="14" fill="#1f6feb" opacity="0.15"/>
+      <text x="26" y="30" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#388bfd">🔗</text>
+      <text x="48" y="20" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#e6edf3">Attack Chains</text>
+      <text x="48" y="36" font-family="'Segoe UI', sans-serif" font-size="11" fill="#8b949e">Multi-step detection</text>
+    </g>
+
+    <!-- Feature 4 -->
+    <g transform="translate(215, 65)">
+      <rect width="200" height="50" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+      <circle cx="26" cy="25" r="14" fill="#1f6feb" opacity="0.15"/>
+      <text x="26" y="30" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#388bfd">📊</text>
+      <text x="48" y="20" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#e6edf3">SOC Reports</text>
+      <text x="48" y="36" font-family="'Segoe UI', sans-serif" font-size="11" fill="#8b949e">KPI + PDF to clients</text>
+    </g>
+
+    <!-- Feature 5 -->
+    <g transform="translate(0, 130)">
+      <rect width="200" height="50" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+      <circle cx="26" cy="25" r="14" fill="#1f6feb" opacity="0.15"/>
+      <text x="26" y="30" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#388bfd">🔍</text>
+      <text x="48" y="20" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#e6edf3">/ask Anything</text>
+      <text x="48" y="36" font-family="'Segoe UI', sans-serif" font-size="11" fill="#8b949e">20+ data sources</text>
+    </g>
+
+    <!-- Feature 6 -->
+    <g transform="translate(215, 130)">
+      <rect width="200" height="50" rx="8" fill="#161b22" stroke="#21262d" stroke-width="1"/>
+      <circle cx="26" cy="25" r="14" fill="#1f6feb" opacity="0.15"/>
+      <text x="26" y="30" font-family="sans-serif" font-size="16" text-anchor="middle" fill="#388bfd">🔬</text>
+      <text x="48" y="20" font-family="'Segoe UI', sans-serif" font-size="12" font-weight="600" fill="#e6edf3">/velo Forensics</text>
+      <text x="48" y="36" font-family="'Segoe UI', sans-serif" font-size="11" fill="#8b949e">Velociraptor live DFIR</text>
+    </g>
+
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="297" width="1200" height="3" fill="url(#accent)" opacity="0.4"/>
+</svg>
